@@ -1,0 +1,11 @@
+development:
+  dialect: postgres
+  database: lunches_development
+  host: 127.0.0.1
+  pool: 5
+
+test:
+  url: {{envOr "TEST_DATABASE_URL" "postgres://postgres:postgres@127.0.0.1:5432/lunches_test?sslmode=disable"}}
+
+production:
+  url: {{envOr "DATABASE_URL" "postgres://postgres:postgres@127.0.0.1:5432/lunches_production?sslmode=disable"}}
