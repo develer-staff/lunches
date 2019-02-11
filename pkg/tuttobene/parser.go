@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+var Titles = map[MenuRowType]string{
+	Primo:       "Primi piatti",
+	Secondo:     "Secondi piatti",
+	Vegetariano: "Piatti vegetariani",
+	Frutta:      "Frutta",
+	Panino:      "I NOSTRI  PANINI  ESPRESSI…",
+}
+
 func ParseMenuBytes(bs []byte) (*Menu, error) {
 	f, err := xlsx.OpenBinary(bs)
 	if err != nil {
@@ -51,7 +59,7 @@ func parseSheet(s *xlsx.Sheet) (*Menu, error) {
 			continue
 		}
 
-		content, rowType, isTitle, isDailyProposal:= parseRow(r.Cells[1].String())
+		content, rowType, isTitle, isDailyProposal := parseRow(r.Cells[1].String())
 
 		if isTitle {
 			currentType = rowType
@@ -104,17 +112,10 @@ func parseRow(content string) (string, MenuRowType, bool, bool) {
 }
 
 func parseTitle(content string) (bool, MenuRowType) {
-	switch content {
-	case "Primi piatti":
-		return true, Primo
-	case "Secondi piatti":
-		return true, Secondo
-	case "Piatti vegetariani":
-		return true, Vegetariano
-	case "Frutta":
-		return true, Frutta
-	case "I NOSTRI  PANINI  ESPRESSI…":
-		return true, Panino
+	for k, title := range Titles {
+		if strings.EqualFold(title, content) {
+			return true, k
+		}
 	}
 
 	return false, Empty
