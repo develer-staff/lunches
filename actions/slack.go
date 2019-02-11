@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/develersrl/lunches/actions/slackbot"
+	"github.com/develersrl/lunches/actions/tinabot"
 	"github.com/gobuffalo/buffalo"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
@@ -21,13 +22,7 @@ func SlackHandler(c buffalo.Context) error {
 	botID := os.Getenv("BOT_ID")
 
 	bot := slackbot.New(botID, api)
-	bot.DefaultResponse(func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User) {
-		bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.")
-	})
-
-	bot.RespondTo("^(?i)menu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User, args ...string) {
-		bot.Message(msg.Channel, "Non c'è nessun menu impostato!")
-	})
+	tinabot.Tinabot(bot)
 
 	w := c.Response()
 	r := c.Request()
