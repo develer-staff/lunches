@@ -31,28 +31,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	bs, err := ioutil.ReadFile(os.Args[1]);
+	bs, err := ioutil.ReadFile(os.Args[1])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not open file: %v", err)
+		fmt.Fprintf(os.Stderr, "Could not open file: %v\n", err)
 		os.Exit(1)
 	}
 
 	menu, err := tuttobene.ParseMenuBytes(bs)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not parse file: %v", err)
+		fmt.Fprintf(os.Stderr, "Could not parse file: %v\n", err)
 		os.Exit(1)
 	}
 
 	if menu == nil {
-		fmt.Fprintf(os.Stderr, "Unexpected nil menu: %v", err)
+		fmt.Fprintf(os.Stderr, "Unexpected nil menu: %v\n", err)
 		os.Exit(1)
 	}
 
-	switch (os.Args[2]) {
+	switch os.Args[2] {
 	case "json":
 		out, err := json.MarshalIndent(menu, "", "		")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not marshal menu: %v", err)
+			fmt.Fprintf(os.Stderr, "Could not marshal menu: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Println(string(out))
@@ -66,5 +66,8 @@ func main() {
 			fmt.Println(m.Content)
 		}
 		fmt.Println("")
+	default:
+		fmt.Fprintf(os.Stderr, "Invalid format (json|tina): %v\n", os.Args[2])
+		os.Exit(1)
 	}
 }
