@@ -63,6 +63,10 @@ func main() {
 				currentSection = m.Type
 				fmt.Println("\n" + tuttobene.Titles[currentSection])
 			}
+
+			if m.IsDailyProposal {
+				fmt.Print("Proposta del giorno: ")
+			}
 			fmt.Println(m.Content)
 		}
 		fmt.Println("")
