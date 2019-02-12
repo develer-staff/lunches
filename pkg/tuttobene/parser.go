@@ -79,13 +79,11 @@ func parseSheet(s *xlsx.Sheet) (*Menu, error) {
 			continue
 		}
 
-		m := MenuRow{
+		menuRows = append(menuRows, MenuRow{
 			Content:         strings.TrimSpace(content),
 			Type:            currentType,
 			IsDailyProposal: isDailyProposal,
-		}
-
-		menuRows = append(menuRows, m)
+		})
 	}
 
 	return &menuRows, nil
