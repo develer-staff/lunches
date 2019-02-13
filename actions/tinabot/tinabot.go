@@ -9,12 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nlopes/slack"
+
 	"github.com/develersrl/lunches/actions/brain"
 	"github.com/develersrl/lunches/actions/slackbot"
 	"github.com/go-redis/redis"
-
-	"github.com/nlopes/slack"
-	"github.com/nlopes/slack/slackevents"
 )
 
 type Order struct {
@@ -98,11 +97,11 @@ func Tinabot(bot *slackbot.Bot) {
 
 	brain := brain.New(redisURL)
 
-	bot.DefaultResponse(func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User) {
+	bot.DefaultResponse(func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User) {
 		bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.")
 	})
 
-	bot.RespondTo("^(?i)per me (.*)$", func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User, args ...string) {
+	bot.RespondTo("^(?i)per me (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		dish := args[1]
 		order := getOrder(brain)
 
@@ -154,7 +153,7 @@ func Tinabot(bot *slackbot.Bot) {
 		bot.Message(msg.Channel, reply+fmt.Sprintf("Ok, aggiunt%s %d piatt%s per %s", c, l, c, u))
 	})
 
-	bot.RespondTo("^(?i)ordine$", func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User, args ...string) {
+	bot.RespondTo("^(?i)ordine$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		order := getOrder(brain)
 
 		r := ""
@@ -167,7 +166,7 @@ func Tinabot(bot *slackbot.Bot) {
 		bot.Message(msg.Channel, "Ecco l'ordine:\n"+r)
 	})
 
-	bot.RespondTo("^(?i)email$", func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User, args ...string) {
+	bot.RespondTo("^(?i)email$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		order := getOrder(brain)
 		subj := "Ordine Develer del giorno " + order.Timestamp.Format("02/01/2006")
 		body := ""
@@ -182,7 +181,7 @@ func Tinabot(bot *slackbot.Bot) {
 		bot.Message(msg.Channel, out)
 	})
 
-	bot.RespondTo("^(?i)menu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User, args ...string) {
+	bot.RespondTo("^(?i)menu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		var menu string
 		if len(args) > 1 {
 			menu = strings.TrimSpace(args[1])
@@ -203,7 +202,7 @@ func Tinabot(bot *slackbot.Bot) {
 		}
 	})
 
-	bot.RespondTo("^set (.*)$", func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User, args ...string) {
+	bot.RespondTo("^set (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		ar := strings.Split(args[1], " ")
 		key := ar[0]
 		val := ar[1]
@@ -215,7 +214,7 @@ func Tinabot(bot *slackbot.Bot) {
 		}
 	})
 
-	bot.RespondTo("^get (.*)$", func(b *slackbot.Bot, msg *slackevents.MessageEvent, user *slack.User, args ...string) {
+	bot.RespondTo("^get (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		key := args[1]
 		var val string
 		err := brain.Get(key, &val)

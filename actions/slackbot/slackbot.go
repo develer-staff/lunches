@@ -5,13 +5,17 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nlopes/slack/slackevents"
-
 	"github.com/nlopes/slack"
 )
 
-type SimpleAction func(*Bot, *slackevents.MessageEvent, *slack.User)
-type Action func(*Bot, *slackevents.MessageEvent, *slack.User, ...string)
+type BotMsg struct {
+	Channel string
+	User    string
+	Text    string
+}
+
+type SimpleAction func(*Bot, *BotMsg, *slack.User)
+type Action func(*Bot, *BotMsg, *slack.User, ...string)
 
 type Bot struct {
 	UserID string
@@ -45,10 +49,8 @@ func (bot *Bot) Message(channel string, msg string) {
 	bot.client.PostMessage(channel, slack.MsgOptionText(msg, false))
 }
 
-func (bot *Bot) validMessage(msg *slackevents.MessageEvent) bool {
-	return msg.Type == "message" &&
-		(msg.SubType != "message_deleted" && msg.SubType != "bot_message") &&
-		msg.User != bot.UserID &&
+func (bot *Bot) validMessage(msg *BotMsg) bool {
+	return msg.User != bot.UserID &&
 		(strings.HasPrefix(msg.Text, "<@"+bot.UserID+">") || strings.HasPrefix(msg.Channel, "D"))
 }
 
@@ -56,7 +58,8 @@ func (bot *Bot) cleanupMsg(msg string) string {
 	return strings.TrimLeft(strings.TrimSpace(msg), "<@"+bot.UserID+"> ")
 }
 
-func (bot *Bot) HandleMsg(msg *slackevents.MessageEvent) {
+func (bot *Bot) HandleMsg(channel, username, text string) {
+	msg := &BotMsg{channel, username, text}
 	if !bot.validMessage(msg) {
 		return
 	}

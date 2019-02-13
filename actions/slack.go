@@ -3,7 +3,6 @@ package actions
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 
@@ -48,10 +47,9 @@ func SlackHandler(c buffalo.Context) error {
 
 		switch ev := innerEvent.Data.(type) {
 		case *slackevents.AppMentionEvent:
-			api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+			bot.HandleMsg(ev.Channel, ev.User, ev.Text)
 		case *slackevents.MessageEvent:
-			log.Println(ev)
-			bot.HandleMsg(ev)
+			bot.HandleMsg(ev.Channel, ev.User, ev.Text)
 		}
 
 	}
