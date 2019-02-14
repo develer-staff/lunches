@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/juju/errors"
 	"github.com/tealeg/xlsx"
+	"io"
 	"strings"
 )
 
@@ -13,6 +14,20 @@ var Titles = map[MenuRowType]string{
 	Vegetariano: "Piatti vegetariani",
 	Frutta:      "Frutta",
 	Panino:      "I NOSTRI  PANINI  ESPRESSI…",
+}
+
+func ParseMenuReaderAt(r io.ReaderAt, size int64) (*Menu, error) {
+	f, err := xlsx.OpenReaderAt(r, size)
+	if err != nil {
+		return nil, errors.Annotate(err, "while opening readerAt")
+	}
+
+	if len(f.Sheet) == 0 {
+		return nil, errors.New("no sheets in file")
+	}
+
+	// Menu is expected to be on the first sheet
+	return parseSheet(f.Sheets[0])
 }
 
 func ParseMenuBytes(bs []byte) (*Menu, error) {
