@@ -126,13 +126,13 @@ func TestParseMenu(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseMenu(tt.args.path)
+			got, err := ParseMenuFile(tt.args.path)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseMenu() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ParseMenuFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseMenu() = %v, want %v", got, tt.want)
+				t.Errorf("ParseMenuFile() = %v, want %v", got, tt.want)
 			}
 		})
 	}

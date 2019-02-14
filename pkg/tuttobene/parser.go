@@ -29,7 +29,7 @@ func ParseMenuBytes(bs []byte) (*Menu, error) {
 	return parseSheet(f.Sheets[0])
 }
 
-func ParseMenu(path string) (*Menu, error) {
+func ParseMenuFile(path string) (*Menu, error) {
 	f, err := xlsx.OpenFile(path)
 	if err != nil {
 		return nil, errors.Annotatef(err, "while opening file %s", path)
