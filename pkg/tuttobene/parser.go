@@ -16,6 +16,8 @@ var Titles = map[MenuRowType]string{
 	Panino:      "I NOSTRI  PANINI  ESPRESSI…",
 }
 
+// ParseMenuReaderAt takes io.ReaderAt of an XLSX file and returns a populated
+// menu struct.
 func ParseMenuReaderAt(r io.ReaderAt, size int64) (*Menu, error) {
 	f, err := xlsx.OpenReaderAt(r, size)
 	if err != nil {
@@ -30,6 +32,8 @@ func ParseMenuReaderAt(r io.ReaderAt, size int64) (*Menu, error) {
 	return parseSheet(f.Sheets[0])
 }
 
+// ParseMenuBytes takes io.ReaderAt of an XLSX file and returns a populated
+// menu struct.
 func ParseMenuBytes(bs []byte) (*Menu, error) {
 	f, err := xlsx.OpenBinary(bs)
 	if err != nil {
@@ -44,6 +48,8 @@ func ParseMenuBytes(bs []byte) (*Menu, error) {
 	return parseSheet(f.Sheets[0])
 }
 
+// ParseMenuFile takes the path to an XLSX file and returns a populated
+// menu struct.
 func ParseMenuFile(path string) (*Menu, error) {
 	f, err := xlsx.OpenFile(path)
 	if err != nil {
