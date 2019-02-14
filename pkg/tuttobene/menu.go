@@ -5,6 +5,7 @@ const (
 	Empty
 	Primo
 	Secondo
+	Contorno
 	Vegetariano
 	Frutta
 	Panino

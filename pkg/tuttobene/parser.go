@@ -11,6 +11,7 @@ import (
 var Titles = map[MenuRowType]string{
 	Primo:       "Primi piatti",
 	Secondo:     "Secondi piatti",
+	Contorno:    "contorni….",
 	Vegetariano: "Piatti vegetariani",
 	Frutta:      "Frutta",
 	Panino:      "I NOSTRI  PANINI  ESPRESSI…",
