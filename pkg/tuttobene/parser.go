@@ -77,7 +77,7 @@ func parseSheet(s *xlsx.Sheet) (*Menu, error) {
 	)
 
 	for _, r := range s.Rows {
-		if len(r.Cells) < 3 {
+		if len(r.Cells) < 2 {
 			continue
 		}
 
