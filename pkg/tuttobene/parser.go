@@ -104,20 +104,20 @@ func parseSheet(s *xlsx.Sheet) (*Menu, error) {
 		// Handle "Pasta al ragù, pesto o pomodoro (sono sempre disponibili)"
 		if strings.HasSuffix(content, "(sono sempre disponibili)") {
 
-			menuRows = append(menuRows, MenuRow {
-				Content: "Pasta al ragù",
+			menuRows = append(menuRows, MenuRow{
+				Content:         "Pasta al ragù",
 				Type:            currentType,
 				IsDailyProposal: false,
 			})
 
-			menuRows = append(menuRows, MenuRow {
-				Content: "Pasta al pesto",
+			menuRows = append(menuRows, MenuRow{
+				Content:         "Pasta al pesto",
 				Type:            currentType,
 				IsDailyProposal: false,
 			})
 
-			menuRows = append(menuRows, MenuRow {
-				Content: "Pasta al pomodoro",
+			menuRows = append(menuRows, MenuRow{
+				Content:         "Pasta al pomodoro",
 				Type:            currentType,
 				IsDailyProposal: false,
 			})
