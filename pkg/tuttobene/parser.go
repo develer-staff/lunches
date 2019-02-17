@@ -9,12 +9,12 @@ import (
 )
 
 var Titles = map[MenuRowType]string{
-	Primo:       "Primi piatti",
-	Secondo:     "Secondi piatti",
-	Contorno:    "contorni….",
-	Vegetariano: "Piatti vegetariani",
-	Frutta:      "Frutta",
-	Panino:      "I NOSTRI  PANINI  ESPRESSI…",
+	Primo:       "primi piatti",
+	Secondo:     "secondi piatti",
+	Contorno:    "contorni",
+	Vegetariano: "piatti vegetariani",
+	Frutta:      "frutta",
+	Panino:      "i nostri panini espressi",
 }
 
 // ParseMenuReaderAt takes io.ReaderAt of an XLSX file and returns a populated
@@ -81,7 +81,7 @@ func parseSheet(s *xlsx.Sheet) (*Menu, error) {
 			continue
 		}
 
-		content, rowType, isTitle, isDailyProposal := parseRow(r.Cells[1].String())
+		content, rowType, isTitle, isDailyProposal := parseRow(standardizeSpaces(r.Cells[1].String()))
 
 		if isTitle {
 			currentType = rowType
@@ -156,11 +156,31 @@ func parseRow(content string) (string, MenuRowType, bool, bool) {
 }
 
 func parseTitle(content string) (bool, MenuRowType) {
+	content = cleanTitleString(standardizeSpaces(content))
 	for k, title := range Titles {
-		if strings.EqualFold(title, content) {
+		if strings.EqualFold(title, content) || strings.EqualFold(strings.Replace(title, " ", "", -1), content) {
 			return true, k
 		}
 	}
 
-	return false, Empty
+	return false, Unknonwn
+}
+
+var titleDirt = []string{
+	"…",
+	".",
+	",",
+	";",
+}
+
+func cleanTitleString(s string) string {
+	for _, p := range titleDirt {
+		s = strings.Replace(s, p, "", -1)
+	}
+
+	return strings.ToLower(s)
+}
+
+func standardizeSpaces(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }
