@@ -25,6 +25,15 @@ Format can be:
 `
 )
 
+var TinaFormatTitles = map[tuttobene.MenuRowType]string{
+	tuttobene.Primo:       "Primi Piatti",
+	tuttobene.Secondo:     "Secondi Piatti",
+	tuttobene.Contorno:    "Contorni",
+	tuttobene.Vegetariano: "Piatti Vegetariano",
+	tuttobene.Frutta:      "Frutta",
+	tuttobene.Panino:      "Panini Espressi",
+}
+
 func main() {
 	if len(os.Args) < 3 {
 		fmt.Print(usage)
@@ -61,7 +70,7 @@ func main() {
 		for _, m := range *menu {
 			if currentSection != m.Type {
 				currentSection = m.Type
-				fmt.Println("\n" + tuttobene.Titles[currentSection])
+				fmt.Println("\n" + TinaFormatTitles[currentSection])
 			}
 
 			if m.IsDailyProposal {
