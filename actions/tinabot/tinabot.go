@@ -13,6 +13,7 @@ import (
 
 	"github.com/develersrl/lunches/actions/brain"
 	"github.com/develersrl/lunches/actions/slackbot"
+	"github.com/develersrl/lunches/pkg/tuttobene"
 	"github.com/go-redis/redis"
 )
 
@@ -52,17 +53,17 @@ func fuzzyMatch(dish, menuline string) bool {
 	return key.MatchString(strings.ToLower(menuline))
 }
 
-func findDishes(menu, dish string) []string {
+func findDishes(menu tuttobene.Menu, dish string) []string {
 	dish = strings.TrimSpace(strings.ToLower(dish))
-	menus := strings.Split(strings.TrimSpace(menu), "\n")
+
 	var matches []string
-	for _, m := range menus {
-		if strings.ToLower(m) == dish {
-			return []string{m}
+	for _, m := range menu {
+		if strings.EqualFold(m.Content, dish) {
+			return []string{m.Content}
 		}
 
-		if fuzzyMatch(dish, m) {
-			matches = append(matches, m)
+		if fuzzyMatch(dish, m.Content) {
+			matches = append(matches, m.Content)
 		}
 	}
 	return matches
@@ -85,6 +86,20 @@ func clearUserOrder(order *Order, user string) string {
 		}
 	}
 	return strings.Join(dishes, "\n")
+}
+
+func renderMenu(menu tuttobene.Menu) string {
+	menutype := tuttobene.Unknonwn
+
+	out := ""
+	for _, r := range menu {
+		if r.Type != menutype {
+			out = out + strings.ToUpper(tuttobene.Titles[r.Type]) + "\n"
+			menutype = r.Type
+		}
+		out = out + r.Content + "\n"
+	}
+	return out
 }
 
 func Tinabot(bot *slackbot.Bot) {
@@ -111,7 +126,7 @@ func Tinabot(bot *slackbot.Bot) {
 			brain.Set("order", order)
 			return
 		}
-		var menu string
+		var menu tuttobene.Menu
 		err := brain.Get("menu", &menu)
 		if err != nil {
 			bot.Message(msg.Channel, "Nessun menu impostato!")
@@ -182,23 +197,29 @@ func Tinabot(bot *slackbot.Bot) {
 	})
 
 	bot.RespondTo("^(?i)menu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
-		var menu string
-		if len(args) > 1 {
-			menu = strings.TrimSpace(args[1])
+		var menu []string
+		if args[1] != "" {
+			menu = strings.Split(strings.TrimSpace(args[1]), "\n")
 		} else {
-			menu = ""
+			menu = nil
 		}
 
-		if menu == "" {
-			err := brain.Get("menu", &menu)
+		if menu == nil {
+			var m tuttobene.Menu
+			err := brain.Get("menu", &m)
 			if err == redis.Nil {
 				bot.Message(msg.Channel, "Non c'è nessun menu impostato!")
 			} else {
-				bot.Message(msg.Channel, "Il menu è:\n"+menu)
+				bot.Message(msg.Channel, "Il menu è:\n"+renderMenu(m))
 			}
 		} else {
-			brain.Set("menu", menu)
-			bot.Message(msg.Channel, "Ok, il menu è:\n"+menu)
+			m, err := tuttobene.ParseMenuRows(menu)
+			if err != nil {
+				bot.Message(msg.Channel, "Menu parse error: "+err.Error())
+				return
+			}
+			brain.Set("menu", *m)
+			bot.Message(msg.Channel, "Ok, il menu è:\n"+renderMenu(*m))
 		}
 	})
 
