@@ -224,4 +224,15 @@ func Tinabot(bot *slackbot.Bot) {
 			bot.Message(msg.Channel, key+": "+val)
 		}
 	})
+
+	bot.RespondTo("^read (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+		key := args[1]
+
+		val, err := brain.Read(key)
+		if err != nil {
+			bot.Message(msg.Channel, "Error: "+err.Error())
+		} else {
+			bot.Message(msg.Channel, key+": "+val)
+		}
+	})
 }

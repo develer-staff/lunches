@@ -48,9 +48,19 @@ func (b *Brain) Set(key string, val interface{}) error {
 
 	return b.client.Set(key, encoded, 0).Err()
 }
+func (b *Brain) Read(key string) (string, error) {
+	val, err := b.client.Get(key).Result()
+
+	if err != nil {
+		return "", err
+	}
+
+	return val, nil
+}
 
 func (b *Brain) Get(key string, q interface{}) error {
-	val, err := b.client.Get(key).Result()
+
+	val, err := b.Read(key)
 
 	if err != nil {
 		return err
