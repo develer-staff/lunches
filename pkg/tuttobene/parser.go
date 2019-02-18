@@ -30,7 +30,7 @@ func ParseMenuReaderAt(r io.ReaderAt, size int64) (*Menu, error) {
 	}
 
 	// Menu is expected to be on the first sheet
-	return parseSheet(f.Sheets[0])
+	return ParseSheet(f.Sheets[0])
 }
 
 // ParseMenuBytes takes io.ReaderAt of an XLSX file and returns a populated
@@ -46,7 +46,7 @@ func ParseMenuBytes(bs []byte) (*Menu, error) {
 	}
 
 	// Menu is expected to be on the first sheet
-	return parseSheet(f.Sheets[0])
+	return ParseSheet(f.Sheets[0])
 }
 
 // ParseMenuFile takes the path to an XLSX file and returns a populated
@@ -62,26 +62,37 @@ func ParseMenuFile(path string) (*Menu, error) {
 	}
 
 	// Menu is expected to be on the first sheet
-	return parseSheet(f.Sheets[0])
+	return ParseSheet(f.Sheets[0])
 }
 
-func parseSheet(s *xlsx.Sheet) (*Menu, error) {
+// ParseSheet takes an xlsx.Sheet and returns a populated menu struct.
+func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 	// attempt at having a sensible number of rows required in menu
 	if len(s.Rows) < 12 {
 		return nil, errors.New(fmt.Sprintf("not enough rows: %d", len(s.Rows)))
 	}
 
-	var (
-		currentType MenuRowType
-		menuRows    Menu
-	)
-
+	var rows = make([]string, 0)
 	for _, r := range s.Rows {
 		if len(r.Cells) < 2 {
 			continue
 		}
 
-		content, rowType, isTitle, isDailyProposal := parseRow(standardizeSpaces(r.Cells[1].String()))
+		rows = append(rows, r.Cells[1].String())
+	}
+
+	return ParseMenuRows(rows)
+}
+
+// ParseMenuRows takes a slice of strings and returns a populated menu struct.
+func ParseMenuRows(rows []string) (*Menu, error) {
+	var (
+		currentType MenuRowType
+		menuRows    Menu
+	)
+
+	for _, r := range rows {
+		content, rowType, isTitle, isDailyProposal := parseRow(standardizeSpaces(r))
 
 		if isTitle {
 			currentType = rowType
@@ -144,7 +155,7 @@ func parseRow(content string) (string, MenuRowType, bool, bool) {
 
 	isTitle, titleType := parseTitle(content)
 	if isTitle {
-		return content, titleType, true, isDailyProposal
+		return content, titleType, isTitle, isDailyProposal
 	}
 
 	if strings.HasPrefix(content, "Proposta del giorno: ") {
@@ -152,7 +163,7 @@ func parseRow(content string) (string, MenuRowType, bool, bool) {
 		isDailyProposal = true
 	}
 
-	return content, Unknonwn, false, isDailyProposal
+	return content, Unknonwn, isTitle, isDailyProposal
 }
 
 func parseTitle(content string) (bool, MenuRowType) {
