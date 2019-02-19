@@ -28,7 +28,7 @@ func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
 	if (dish.Type == tuttobene.Primo && u.DishMask != 0) ||
 		(dish.Type == tuttobene.Secondo && (u.DishMask&^(1<<uint(tuttobene.Contorno))) != 0) ||
 		(dish.Type == tuttobene.Contorno && (u.DishMask&^(1<<uint(tuttobene.Contorno)|1<<uint(tuttobene.Secondo))) != 0) {
-		return errors.New("è possibile solo comporre piatti formati da un secondo e contorni")
+		return errors.New("è possibile solo comporre piatti formati da un secondo e contorno/i")
 	}
 
 	u.DishMask |= (1 << uint(dish.Type))
@@ -55,12 +55,12 @@ func (u *UserChoice) String() string {
 			main = append(main, d.Content)
 		}
 	}
-	out := strings.Join(main, ",")
+	out := strings.Join(main, ", ")
 	if len(side) > 0 {
 		if len(main) > 0 {
-			out += " con contorno di: "
+			out += " con "
 		}
-		out += strings.Join(side, ",")
+		out += strings.Join(side, ", ")
 	}
 	return out
 }
