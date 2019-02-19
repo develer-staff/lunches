@@ -118,16 +118,13 @@ func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 }
 
 func clearUserOrder(order *Order, user string) string {
-	dishes := order.Users[user]
 	delete(order.Users, user)
 	var deleted []string
-	for _, uc := range dishes {
 
-		d := uc.String()
-		deleted = append(deleted, d)
-		// Find and remove the user
-		for i, v := range order.Dishes[d] {
-			if v == user {
+	for d, users := range order.Dishes {
+		for i, u := range users {
+			if u == user {
+				deleted = append(deleted, d)
 				order.Dishes[d] = append(order.Dishes[d][:i], order.Dishes[d][i+1:]...)
 				break
 			}
@@ -136,6 +133,7 @@ func clearUserOrder(order *Order, user string) string {
 			delete(order.Dishes, d)
 		}
 	}
+
 	return strings.Join(deleted, "\n")
 }
 
