@@ -1,11 +1,13 @@
 package tinabot
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -17,17 +19,63 @@ import (
 	"github.com/go-redis/redis"
 )
 
+type UserChoice struct {
+	DishMask uint
+	Dishes   []tuttobene.MenuRow
+}
+
+func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
+	if (dish.Type == tuttobene.Primo && u.DishMask != 0) ||
+		(dish.Type == tuttobene.Secondo && (u.DishMask&^(1<<uint(tuttobene.Contorno))) != 0) ||
+		(dish.Type == tuttobene.Contorno && (u.DishMask&^(1<<uint(tuttobene.Contorno)|1<<uint(tuttobene.Secondo))) != 0) {
+		return errors.New("è possibile solo comporre piatti formati da un secondo e contorni")
+	}
+
+	u.DishMask |= (1 << uint(dish.Type))
+	u.Dishes = append(u.Dishes, dish)
+	return nil
+}
+
+func (u *UserChoice) Sort() {
+	sort.Slice(u.Dishes, func(i, j int) bool {
+		si := fmt.Sprintf("%d%s", u.Dishes[i].Type, u.Dishes[i].Content)
+		sj := fmt.Sprintf("%d%s", u.Dishes[j].Type, u.Dishes[j].Content)
+		return strings.Compare(si, sj) < 0
+	})
+}
+
+func (u *UserChoice) String() string {
+	u.Sort()
+	var main []string
+	var side []string
+	for _, d := range u.Dishes {
+		if d.Type == tuttobene.Contorno {
+			side = append(side, d.Content)
+		} else {
+			main = append(main, d.Content)
+		}
+	}
+	out := strings.Join(main, ",")
+	if len(side) > 0 {
+		if len(main) > 0 {
+			out += " con contorno di: "
+		}
+		out += strings.Join(side, ",")
+	}
+	return out
+}
+
 type Order struct {
 	Timestamp time.Time
-	Dishes    map[string][]string //map dishes with users
-	Users     map[string][]string //map each user to his/her dishes
+	Dishes    map[string][]string     //map dishes with users
+	Users     map[string][]UserChoice //map each user to his/her dishes
 }
 
 func NewOrder() *Order {
 	return &Order{
 		Timestamp: time.Now(),
 		Dishes:    make(map[string][]string),
-		Users:     make(map[string][]string),
+		Users:     make(map[string][]UserChoice),
 	}
 }
 
@@ -53,17 +101,17 @@ func fuzzyMatch(dish, menuline string) bool {
 	return key.MatchString(strings.ToLower(menuline))
 }
 
-func findDishes(menu tuttobene.Menu, dish string) []string {
+func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 	dish = strings.TrimSpace(strings.ToLower(dish))
 
-	var matches []string
+	var matches []tuttobene.MenuRow
 	for _, m := range menu {
 		if strings.EqualFold(m.Content, dish) {
-			return []string{m.Content}
+			return []tuttobene.MenuRow{m}
 		}
 
 		if fuzzyMatch(dish, m.Content) {
-			matches = append(matches, m.Content)
+			matches = append(matches, m)
 		}
 	}
 	return matches
@@ -72,8 +120,11 @@ func findDishes(menu tuttobene.Menu, dish string) []string {
 func clearUserOrder(order *Order, user string) string {
 	dishes := order.Users[user]
 	delete(order.Users, user)
-	for _, d := range dishes {
+	var deleted []string
+	for _, uc := range dishes {
 
+		d := uc.String()
+		deleted = append(deleted, d)
 		// Find and remove the user
 		for i, v := range order.Dishes[d] {
 			if v == user {
@@ -85,7 +136,7 @@ func clearUserOrder(order *Order, user string) string {
 			delete(order.Dishes, d)
 		}
 	}
-	return strings.Join(dishes, "\n")
+	return strings.Join(deleted, "\n")
 }
 
 func renderMenu(menu tuttobene.Menu) string {
@@ -133,7 +184,7 @@ func Tinabot(bot *slackbot.Bot) {
 			return
 		}
 
-		var choice []string
+		var choice []UserChoice
 		dishes := strings.Split(dish, "&amp;&amp;")
 
 		reply := ""
@@ -144,19 +195,29 @@ func Tinabot(bot *slackbot.Bot) {
 				bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menu che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
 				return
 			} else if len(dishes) > 1 {
-				matches := strings.Join(dishes, "\n")
-				bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+matches+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
+				var matches []string
+				for _, d := range dishes {
+					matches = append(matches, d.Content)
+				}
+
+				bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+strings.Join(matches, "\n")+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
 				return
 			} else {
 				d := dishes[0]
-				reply = reply + "Trovato: " + d + "\n"
-				choice = append(choice, d)
+				reply = reply + "Trovato: " + d.Content + fmt.Sprintf(" (%s)\n", tuttobene.Titles[d.Type])
+				var c UserChoice
+				err := c.Add(d)
+				if err != nil {
+					bot.Message(msg.Channel, reply+"errore nell'aggiunta "+err.Error())
+					return
+				}
+				choice = append(choice, c)
 			}
 		}
 		clearUserOrder(order, user.Name)
 		u := user.Name
 		for _, c := range choice {
-			order.Dishes[c] = append(order.Dishes[c], u)
+			order.Dishes[c.String()] = append(order.Dishes[c.String()], u)
 			order.Users[u] = append(order.Users[u], c)
 		}
 		brain.Set("order", order)
