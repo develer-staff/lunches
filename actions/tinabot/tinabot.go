@@ -94,7 +94,7 @@ func renderMenu(menu tuttobene.Menu) string {
 	out := ""
 	for _, r := range menu {
 		if r.Type != menutype {
-			out = out + strings.ToUpper(tuttobene.Titles[r.Type]) + "\n"
+			out = out + "\n*" + strings.ToUpper(tuttobene.Titles[r.Type]) + "*\n"
 			menutype = r.Type
 		}
 		out = out + r.Content + "\n"
