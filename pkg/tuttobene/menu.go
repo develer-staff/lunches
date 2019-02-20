@@ -2,7 +2,6 @@ package tuttobene
 
 const (
 	Unknonwn MenuRowType = iota
-	Empty
 	Primo
 	Secondo
 	Contorno
@@ -10,6 +9,8 @@ const (
 	Frutta
 	Panino
 )
+
+//go:generate stringer -type=MenuRowType
 
 type MenuRowType int
 
