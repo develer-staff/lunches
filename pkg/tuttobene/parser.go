@@ -3,6 +3,7 @@ package tuttobene
 import (
 	"fmt"
 	"github.com/juju/errors"
+	"github.com/sahilm/fuzzy"
 	"github.com/tealeg/xlsx"
 	"io"
 	"strings"
@@ -14,7 +15,7 @@ var Titles = map[MenuRowType]string{
 	Contorno:    "contorni",
 	Vegetariano: "piatti vegetariani",
 	Frutta:      "frutta",
-	Panino:      "i nostri panini espressi",
+	Panino:      "panini espressi",
 }
 
 // ParseMenuReaderAt takes io.ReaderAt of an XLSX file and returns a populated
@@ -87,13 +88,18 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 // ParseMenuRows takes a slice of strings and returns a populated menu struct.
 func ParseMenuRows(rows []string) (*Menu, error) {
 	var (
-		currentType MenuRowType
-		menuRows    Menu
+		currentType          MenuRowType
+		menuRows             Menu
+		menuTitlesRowIndexes = make(map[int]MenuRowType)
 	)
 
-	for _, r := range rows {
-		content, rowType, isTitle, isDailyProposal := parseRow(standardizeSpaces(r))
+	menuTitlesRowIndexes, err  := getMenuTitles(rows)
+	if err != nil {
+		return nil, errors.Annotatef(err, "while getting menu titles")
+	}
 
+	for i, r := range rows {
+		rowType, isTitle := menuTitlesRowIndexes[i]
 		if isTitle {
 			currentType = rowType
 			continue
@@ -104,11 +110,11 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			continue
 		}
 
-		// Check if this is the end of the menu
-		if currentType == Panino && rowType == Empty {
-			return &menuRows, nil
-		}
-		if rowType == Empty {
+		content := standardizeSpaces(r)
+		if content == "" {
+			if currentType == Panino {
+				return &menuRows, nil
+			}
 			continue
 		}
 
@@ -136,6 +142,8 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			continue
 		}
 
+		content, isDailyProposal := parseRow(content)
+		
 		menuRows = append(menuRows, MenuRow{
 			Content:         strings.TrimSpace(content),
 			Type:            currentType,
@@ -146,50 +154,48 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 	return &menuRows, nil
 }
 
-func parseRow(content string) (string, MenuRowType, bool, bool) {
-	var isDailyProposal bool
-
-	if content == "" {
-		return content, Empty, false, false
-	}
-
-	isTitle, titleType := parseTitle(content)
-	if isTitle {
-		return content, titleType, isTitle, isDailyProposal
-	}
-
+func parseRow(content string) (string, bool) {
 	if strings.HasPrefix(content, "Proposta del giorno: ") {
-		content = strings.TrimPrefix(content, "Proposta del giorno: ")
-		isDailyProposal = true
+		return strings.TrimPrefix(content, "Proposta del giorno: "), true
 	}
 
-	return content, Unknonwn, isTitle, isDailyProposal
+	return content, false
 }
 
-func parseTitle(content string) (bool, MenuRowType) {
-	content = cleanTitleString(standardizeSpaces(content))
-	for k, title := range Titles {
-		if strings.EqualFold(title, content) || strings.EqualFold(strings.Replace(title, " ", "", -1), content) {
-			return true, k
+// getMenuTitles returns a map of the row index for each of the sections found in the menu.
+// Fuzzy matching is used to find the titles and some basic validation is done:
+// - order: the titles are expected to be in the order in which the relative const enumeration is declared (see menu.go)
+// - duplicates: if a duplicate title is found, an error is returned
+//
+// Note: it is not expected for all secitons to always be present i.e. if a section is missing, no error is thrown.
+func getMenuTitles(rows []string) (map[int]MenuRowType, error) {
+	var (
+		menuTitlesRowIndexes = make(map[int]MenuRowType)
+		lastTitleType = Unknonwn
+		currentIndex int
+	)
+
+	for t, title := range Titles {
+		results := fuzzy.Find(title, rows)
+		if len(results) == 0 {
+			continue
 		}
+
+		if t < lastTitleType {
+			return nil, errors.New(fmt.Sprintf("Unexpected title order (Found: %s after last: %s)", t, lastTitleType))
+		}
+
+		currentIndex = results[0].Index
+		if _, found := menuTitlesRowIndexes[currentIndex]; found {
+			return nil, errors.New(fmt.Sprintf("Unexptected title duplicate: %s", title))
+		}
+
+
+		// First match is always the title of a section (menu items may contain the same text)
+		menuTitlesRowIndexes[results[0].Index] = t
 	}
 
-	return false, Unknonwn
-}
-
-var titleDirt = []string{
-	"…",
-	".",
-	",",
-	";",
-}
-
-func cleanTitleString(s string) string {
-	for _, p := range titleDirt {
-		s = strings.Replace(s, p, "", -1)
-	}
-
-	return strings.ToLower(s)
+	return menuTitlesRowIndexes, nil
 }
 
 func standardizeSpaces(s string) string {
