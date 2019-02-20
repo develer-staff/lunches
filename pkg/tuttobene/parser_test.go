@@ -178,6 +178,10 @@ func TestParseMenu(t *testing.T) {
 				t.Errorf("ParseMenuFile() = %v, want %v", got, tt.want)
 
 				for i, item := range *got {
+					if i >= len(*tt.want)  {
+						t.Errorf("ParseMenuFile() menu[%d] not expected (%s)", i, item.Content)
+						continue
+					}
 					wanted := (*tt.want)[i]
 					if item.Type != wanted.Type {
 						t.Errorf("ParseMenuFile() menu[%d] (%s) has wrong Type: got %v, want %v", i, item.Content, item.Type, wanted.Type)
@@ -191,63 +195,6 @@ func TestParseMenu(t *testing.T) {
 						t.Errorf("ParseMenuFile() %d has wrong IsDailyProposal: got %v, want %v", i, item.IsDailyProposal, wanted.IsDailyProposal)
 					}
 				}
-			}
-		})
-	}
-}
-
-func Test_parseTitle(t *testing.T) {
-	type args struct {
-		content string
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  bool
-		want1 MenuRowType
-	}{
-		{"Primo", args{"Primi piatti"}, true, Primo},
-		{"Primo Double Space", args{"Primi  piatti"}, true, Primo},
-		{"Primo Wrong Capitalization", args{"primi Piatti"}, true, Primo},
-		{"Primo NoSpace", args{"Primipiatti"}, true, Primo},
-		{"Primo_Puntuaction 01", args{"primi Piatti."}, true, Primo},
-		{"Primo_Puntuaction 02", args{"primi Piatti,"}, true, Primo},
-		{"Primo_Puntuaction 03", args{"primi Piatti;"}, true, Primo},
-		{"Primo Puntuaction 04", args{"primi Piatti…"}, true, Primo},
-		{"Primo Puntuaction 05", args{"primi;, Piatti.."}, true, Primo},
-
-		{"Secondo", args{"Secondi piatti"}, true, Secondo},
-		{"Secondo Double Space", args{"Secondi  piatti"}, true, Secondo},
-		{"Secondo Wrong Capitalization", args{"secondi Piatti"}, true, Secondo},
-		{"Secondo NoSpace", args{"Secondipiatti"}, true, Secondo},
-
-		{"Contorno", args{"Contorni"}, true, Contorno},
-		{"Contorno Wrong Capitalization", args{"Contorni"}, true, Contorno},
-		{"Contorno_Puntuaction 01", args{"contorni…."}, true, Contorno},
-
-		{"Vegetariano", args{"Piatti vegetariani"}, true, Vegetariano},
-		{"Vegetariano Double Space", args{"Piatti  vegetariani"}, true, Vegetariano},
-		{"Vegetariano Wrong Capitalization", args{"piatti Vegetariani"}, true, Vegetariano},
-		{"Vegetariano NoSpace", args{"Piattivegetariani"}, true, Vegetariano},
-
-		{"Frutta", args{"Frutta"}, true, Frutta},
-		{"Frutta Double Space", args{"Frutta  "}, true, Frutta},
-		{"Frutta Wrong Capitalization", args{"frutta"}, true, Frutta},
-
-		{"Panino", args{"i nostri panini espressi"}, true, Panino},
-		{"Panino Double Space", args{"i nostri panini  espressi"}, true, Panino},
-		{"Panino Original Dirt", args{"I NOSTRI  PANINI  ESPRESSI…"}, true, Panino},
-		{"Panino Wrong Capitalization", args{"I NOSTRI  panini  ESPRESSI…"}, true, Panino},
-
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := parseTitle(tt.args.content)
-			if got != tt.want {
-				t.Errorf("parseTitle() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("parseTitle() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

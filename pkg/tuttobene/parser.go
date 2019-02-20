@@ -123,27 +123,24 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 
 			menuRows = append(menuRows, MenuRow{
 				Content:         "Pasta al ragù",
-				Type:            currentType,
-				IsDailyProposal: false,
+				Type:            Primo,
 			})
 
 			menuRows = append(menuRows, MenuRow{
 				Content:         "Pasta al pesto",
-				Type:            currentType,
-				IsDailyProposal: false,
+				Type:            Primo,
 			})
 
 			menuRows = append(menuRows, MenuRow{
 				Content:         "Pasta al pomodoro",
-				Type:            currentType,
-				IsDailyProposal: false,
+				Type:            Primo,
 			})
 
 			continue
 		}
 
 		content, isDailyProposal := parseRow(content)
-		
+
 		menuRows = append(menuRows, MenuRow{
 			Content:         strings.TrimSpace(content),
 			Type:            currentType,
