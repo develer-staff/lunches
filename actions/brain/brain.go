@@ -34,7 +34,7 @@ func New(uri string) *Brain {
 	pong, err := client.Ping().Result()
 	log.Println(pong)
 	if err != nil {
-		log.Fatalln(err.Error)
+		log.Println("Could not ping redis url: ", err)
 	}
 
 	return &Brain{client: client}
