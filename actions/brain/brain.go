@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -26,13 +27,17 @@ func New(uri string) *Brain {
 	}
 
 	client := redis.NewClient(&redis.Options{
-		Addr:     url,
-		Password: pass, // no password set
-		DB:       0,    // use default DB
+		Addr:        url,
+		Password:    pass,             // no password set
+		DB:          0,                // use default DB
+		ReadTimeout: 10 * time.Second, // Heroku can be slow sometimes
 	})
 
+	start := time.Now()
 	pong, err := client.Ping().Result()
-	log.Println(pong)
+	d := time.Since(start)
+	log.Printf("%s, %v", pong, d)
+
 	if err != nil {
 		log.Println("Could not ping redis url: ", err)
 	}
