@@ -175,9 +175,9 @@ func Tinabot(bot *slackbot.Bot) {
 
 	bot.RespondTo("^(?i)per me (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		dish := args[1]
-		order := getOrder(brain)
 
 		if strings.ToLower(dish) == "niente" {
+			order := getOrder(brain)
 			old := clearUserOrder(order, user.Name)
 			bot.Message(msg.Channel, "Ok, cancello ordine:\n"+old)
 			brain.Set("order", order)
@@ -227,8 +227,9 @@ func Tinabot(bot *slackbot.Bot) {
 			}
 			choice = append(choice, currChoice)
 		}
-		clearUserOrder(order, user.Name)
 		u := user.Name
+		order := getOrder(brain)
+		clearUserOrder(order, user.Name)
 		for _, c := range choice {
 			order.Dishes[c.String()] = append(order.Dishes[c.String()], u)
 			order.Users[u] = append(order.Users[u], c)
