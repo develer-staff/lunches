@@ -221,9 +221,8 @@ func Tinabot(bot *slackbot.Bot, brain *brain.Brain) {
 			var currChoice UserChoice
 			for _, dish := range dishes {
 				dish = strings.TrimSpace(dish)
-				re := regexp.MustCompile("^\".*\"$")
 
-				if re.MatchString(dish) {
+				if dish[0] == '"' && dish[len(dish)-1] == '"' {
 					dish = strings.Trim(dish, "\"")
 					p := tuttobene.MenuRow{
 						Content:         dish,
