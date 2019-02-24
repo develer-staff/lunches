@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -159,15 +158,7 @@ func SplitEsc(s, sep string) []string {
 	return strings.Split(s, sep)
 }
 
-func Tinabot(bot *slackbot.Bot) {
-
-	redisURL := os.Getenv("REDIS_URL")
-	if redisURL == "" {
-		log.Fatalln("No redis URL found!")
-	}
-	log.Printf("Redis URL: %s\n", redisURL)
-
-	brain := brain.New(redisURL)
+func Tinabot(bot *slackbot.Bot, brain *brain.Brain) {
 
 	bot.DefaultResponse(func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User) {
 		bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.")

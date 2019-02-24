@@ -27,10 +27,9 @@ func New(uri string) *Brain {
 	}
 
 	client := redis.NewClient(&redis.Options{
-		Addr:        url,
-		Password:    pass,             // no password set
-		DB:          0,                // use default DB
-		ReadTimeout: 10 * time.Second, // Heroku can be slow sometimes
+		Addr:     url,
+		Password: pass, // no password set
+		DB:       0,    // use default DB
 	})
 
 	start := time.Now()
@@ -72,4 +71,8 @@ func (b *Brain) Get(key string, q interface{}) error {
 	}
 
 	return json.Unmarshal([]byte(val), q)
+}
+
+func (b *Brain) Close() error {
+	return b.client.Close()
 }
