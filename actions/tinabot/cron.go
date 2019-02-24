@@ -13,7 +13,8 @@ import (
 	"github.com/go-redis/redis"
 )
 
-func Cron(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+func (t *TinaBot) Cron(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+
 	var crontab []string
 	if args[1] != "" {
 		crontab = strings.SplitN(strings.TrimSpace(args[1]), " ", 2)
@@ -23,7 +24,7 @@ func Cron(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...str
 
 	if crontab == nil {
 		var sched []string
-		err := tinabrain.Get("cron", &sched)
+		err := t.brain.Get("cron", &sched)
 		if err == redis.Nil || len(sched) == 0 {
 			bot.Message(msg.Channel, "Non c'è nessun cron impostato")
 		} else {
@@ -52,13 +53,13 @@ func Cron(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...str
 				return
 			}
 			var sched []string
-			tinabrain.Get("cron", &sched)
+			t.brain.Get("cron", &sched)
 			sched = append(sched, crontab[1])
-			tinabrain.Set("cron", &sched)
+			t.brain.Set("cron", &sched)
 			bot.Message(msg.Channel, fmt.Sprintf("Ok, cron aggiunto:```%d - %s```", len(sched)-1, crontab[1]))
 		case "rm":
 			var sched []string
-			err := tinabrain.Get("cron", &sched)
+			err := t.brain.Get("cron", &sched)
 			if err != nil || len(sched) == 0 {
 				bot.Message(msg.Channel, "Nessun cron impostato!")
 				return
@@ -74,7 +75,7 @@ func Cron(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...str
 			}
 			bot.Message(msg.Channel, fmt.Sprintf("Ok, rimosso cron ```%d - %s```", n, sched[n]))
 			sched = append(sched[:n], sched[n+1:]...)
-			tinabrain.Set("cron", sched)
+			t.brain.Set("cron", sched)
 		}
 	}
 }

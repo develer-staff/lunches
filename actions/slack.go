@@ -41,7 +41,8 @@ func SlackHandler(c buffalo.Context) error {
 	defer brain.Close()
 
 	bot := slackbot.New(botID, api)
-	tinabot.Tinabot(bot, brain)
+	tina := tinabot.New(bot, brain)
+	tina.AddCommands()
 
 	w := c.Response()
 	r := c.Request()
