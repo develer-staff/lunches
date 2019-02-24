@@ -63,8 +63,9 @@ var _ = Namespace("tinabot", func() {
 				return nil
 			}
 			txt := r[1]
-
-			now := time.Now()
+			loc, err := time.LoadLocation("CET")
+			now := time.Now().In(loc)
+			log.Println("Time now:", now)
 			next := sch.Next(now)
 
 			if now.Add(timerInterval).Sub(next) > 0 {
