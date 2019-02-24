@@ -154,10 +154,9 @@ func renderMenu(menu tuttobene.Menu) string {
 	return out
 }
 
-func Unescape(s string) string {
-	s = strings.TrimSpace(s)
-	s = strings.Replace(s, "\\+", "+", -1)
-	s = strings.Replace(s, "\\&amp;", "&amp;", -1)
+func Unescape(s, sep string) string {
+
+	s = strings.Replace(s, "\\"+sep, sep, -1)
 	s = strings.Replace(s, "\\\\", "\\", -1)
 	return s
 }
@@ -178,14 +177,14 @@ func SplitEsc(s, sep string) []string {
 		}
 		m += start
 		if m == 0 || (m > 0 && s[m-1] != escC) {
-			a = append(a, s[startcp:m])
+			a = append(a, Unescape(s[startcp:m], sep))
 			startcp = m + len(sep)
 		}
 		start = m + len(sep)
 		i++
 	}
 
-	a = append(a, s[startcp:])
+	a = append(a, Unescape(s[startcp:], sep))
 	log.Println(a)
 	return a
 }
@@ -221,7 +220,7 @@ func Tinabot(bot *slackbot.Bot, brain *brain.Brain) {
 			dishes := SplitEsc(req, "&amp;")
 			var currChoice UserChoice
 			for _, dish := range dishes {
-				dish = Unescape(dish)
+				dish = strings.TrimSpace(dish)
 				re := regexp.MustCompile("^\".*\"$")
 
 				if re.MatchString(dish) {
