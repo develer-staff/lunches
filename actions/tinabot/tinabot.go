@@ -188,7 +188,12 @@ func SplitEsc(s, sep string) []string {
 	return a
 }
 
-func Tinabot(bot *slackbot.Bot, brain *brain.Brain) {
+var tinabrain *brain.Brain
+
+func Tinabot(bot *slackbot.Bot, b *brain.Brain) {
+
+	brain := b
+	tinabrain = b
 
 	bot.DefaultResponse(func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User) {
 		bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.")
@@ -365,4 +370,6 @@ func Tinabot(bot *slackbot.Bot, brain *brain.Brain) {
 			bot.Message(msg.Channel, key+": "+val)
 		}
 	})
+
+	bot.RespondTo("^(?i)cron(.*)$", Cron)
 }
