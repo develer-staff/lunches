@@ -63,7 +63,7 @@ var _ = Namespace("tinabot", func() {
 				return nil
 			}
 			txt := r[1]
-			loc, err := time.LoadLocation("CET")
+			loc, err := time.LoadLocation("Europe/Rome")
 			now := time.Now().In(loc)
 			log.Println("Time now:", now)
 			next := sch.Next(now)
