@@ -154,8 +154,40 @@ func renderMenu(menu tuttobene.Menu) string {
 	return out
 }
 
+func Unescape(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.Replace(s, "\\+", "+", -1)
+	s = strings.Replace(s, "\\&amp;", "&amp;", -1)
+	s = strings.Replace(s, "\\\\", "\\", -1)
+	return s
+}
+
 func SplitEsc(s, sep string) []string {
-	return strings.Split(s, sep)
+	escC := byte('\\')
+
+	n := strings.Count(s, sep)
+	var a []string
+	i := 0
+	start := 0
+	startcp := 0
+
+	for i < n {
+		m := strings.Index(s[start:], sep)
+		if m < 0 {
+			break
+		}
+		m += start
+		if m == 0 || (m > 0 && s[m-1] != escC) {
+			a = append(a, s[startcp:m])
+			startcp = m + len(sep)
+		}
+		start = m + len(sep)
+		i++
+	}
+
+	a = append(a, s[startcp:])
+	log.Println(a)
+	return a
 }
 
 func Tinabot(bot *slackbot.Bot, brain *brain.Brain) {
@@ -189,27 +221,41 @@ func Tinabot(bot *slackbot.Bot, brain *brain.Brain) {
 			dishes := SplitEsc(req, "&amp;")
 			var currChoice UserChoice
 			for _, dish := range dishes {
-				found := findDishes(menu, dish)
+				dish = Unescape(dish)
+				re := regexp.MustCompile("^\".*\"$")
 
-				if len(found) == 0 {
-					bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menu che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
-					return
-				} else if len(found) > 1 {
-					var matches []string
-					for _, d := range found {
-						matches = append(matches, d.Content)
+				if re.MatchString(dish) {
+					dish = strings.Trim(dish, "\"")
+					p := tuttobene.MenuRow{
+						Content:         dish,
+						Type:            tuttobene.Empty,
+						IsDailyProposal: false,
 					}
-
-					bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+strings.Join(matches, "\n")+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
-					return
+					reply = reply + fmt.Sprintf("Aggiungo testualmente: '%s'\n", dish)
+					currChoice.Add(p)
 				} else {
-					d := found[0]
-					reply = reply + "Trovato: " + d.Content + fmt.Sprintf(" (%s)\n", tuttobene.Titles[d.Type])
+					found := findDishes(menu, dish)
 
-					err := currChoice.Add(d)
-					if err != nil {
-						bot.Message(msg.Channel, reply+"Errore nella personalizzazione: "+err.Error()+"\nOrdine non aggiunto!")
+					if len(found) == 0 {
+						bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menu che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
 						return
+					} else if len(found) > 1 {
+						var matches []string
+						for _, d := range found {
+							matches = append(matches, d.Content)
+						}
+
+						bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+strings.Join(matches, "\n")+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
+						return
+					} else {
+						d := found[0]
+						reply = reply + "Trovato: " + d.Content + fmt.Sprintf(" (%s)\n", tuttobene.Titles[d.Type])
+
+						err := currChoice.Add(d)
+						if err != nil {
+							bot.Message(msg.Channel, reply+"Errore nella personalizzazione: "+err.Error()+"\nOrdine non aggiunto!")
+							return
+						}
 					}
 				}
 			}
