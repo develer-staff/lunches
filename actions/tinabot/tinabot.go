@@ -185,7 +185,6 @@ func SplitEsc(s, sep string) []string {
 	}
 
 	a = append(a, Unescape(s[startcp:], sep))
-	log.Println(a)
 	return a
 }
 
