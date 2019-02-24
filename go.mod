@@ -16,6 +16,7 @@ require (
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7
 	github.com/markbates/grift v1.0.5
+	github.com/markbates/inflect v1.0.4
 	github.com/nlopes/slack v0.5.0
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/tealeg/xlsx v1.0.3
