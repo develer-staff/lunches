@@ -64,6 +64,10 @@ var _ = Namespace("tinabot", func() {
 			}
 			txt := r[1]
 			loc, err := time.LoadLocation("Europe/Rome")
+			if err != nil {
+				log.Println("LoadLocation error: ", err)
+				return nil
+			}
 			now := time.Now().In(loc)
 			log.Println("Time now:", now)
 			next := sch.Next(now)
