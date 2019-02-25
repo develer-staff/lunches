@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/url"
 	"regexp"
 	"sort"
@@ -68,10 +69,44 @@ func (u *UserChoice) String() string {
 	return out
 }
 
+// OrdString return a string with a prefix that can be used to sort the dishes by category (first courses, second courses, fruit, etc... )
+func (u *UserChoice) OrdString() string {
+	f := math.Log2(float64(u.DishMask))
+	return fmt.Sprintf("%.2f%s", f, u.String())
+}
+
 type Order struct {
 	Timestamp time.Time
 	Dishes    map[string][]string     //map dishes with users
 	Users     map[string][]UserChoice //map each user to his/her dishes
+}
+
+func (o *Order) Sorted() []string {
+	// Create a map of ordered string -> rendered string
+	dishmap := make(map[string]string)
+	for _, choices := range o.Users {
+		for _, c := range choices {
+			dishmap[c.OrdString()] = c.String()
+		}
+	}
+
+	// extract from the map all the ordered strings
+	var ordstring []string
+	for k := range dishmap {
+		ordstring = append(ordstring, k)
+	}
+
+	// sort them
+	sort.Slice(ordstring, func(i, j int) bool {
+		return strings.Compare(ordstring[i], ordstring[j]) < 0
+	})
+
+	// return the ordered rendered strings
+	var out []string
+	for _, d := range ordstring {
+		out = append(out, dishmap[d])
+	}
+	return out
 }
 
 func NewOrder() *Order {
@@ -291,7 +326,7 @@ func (t *TinaBot) AddCommands() {
 		order := getOrder(t.brain)
 
 		r := ""
-		for d := range order.Dishes {
+		for _, d := range order.Sorted() {
 			l := fmt.Sprintf("%d %s ", len(order.Dishes[d]), d)
 			l += "[ " + strings.Join(order.Dishes[d], ",") + " ]\n"
 			r = r + l
@@ -304,7 +339,7 @@ func (t *TinaBot) AddCommands() {
 		order := getOrder(t.brain)
 		subj := "Ordine Develer del giorno " + order.Timestamp.Format("02/01/2006")
 		body := ""
-		for d := range order.Dishes {
+		for _, d := range order.Sorted() {
 			body += fmt.Sprintf("%d %s\n", len(order.Dishes[d]), d)
 		}
 		out := subj + "\n" + body + "\n\n" +
