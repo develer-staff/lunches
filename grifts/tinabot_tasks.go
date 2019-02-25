@@ -69,7 +69,7 @@ var _ = Namespace("tinabot", func() {
 				return nil
 			}
 			now := time.Now().In(loc)
-			log.Println("Time now:", now)
+			now = now.Add(-timerInterval / 2)
 			next := sch.Next(now)
 
 			if now.Add(timerInterval).Sub(next) > 0 {
