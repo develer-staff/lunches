@@ -230,8 +230,13 @@ func (t *TinaBot) AddCommands() {
 			for _, dish := range dishes {
 				dish = strings.TrimSpace(dish)
 
-				if dish[0] == '"' && dish[len(dish)-1] == '"' {
-					dish = strings.Trim(dish, "\"")
+				quoted := (dish[0] == '"' && dish[len(dish)-1] == '"')
+				dish = strings.Trim(dish, "\"")
+
+				found := findDishes(menu, dish)
+				nDish := len(found)
+
+				if quoted && nDish != 1 {
 					p := tuttobene.MenuRow{
 						Content:         dish,
 						Type:            tuttobene.Empty,
@@ -239,29 +244,25 @@ func (t *TinaBot) AddCommands() {
 					}
 					reply = reply + fmt.Sprintf("Aggiungo testualmente: '%s'\n", dish)
 					currChoice.Add(p)
-				} else {
-					found := findDishes(menu, dish)
+				} else if nDish == 0 {
+					t.bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menu che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
+					return
+				} else if nDish > 1 {
+					var matches []string
+					for _, d := range found {
+						matches = append(matches, d.Content)
+					}
 
-					if len(found) == 0 {
-						t.bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menu che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
+					t.bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+strings.Join(matches, "\n")+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
+					return
+				} else { // nDish == 1
+					d := found[0]
+					reply = reply + "Trovato: " + d.Content + fmt.Sprintf(" (%s)\n", tuttobene.Titles[d.Type])
+
+					err := currChoice.Add(d)
+					if err != nil {
+						t.bot.Message(msg.Channel, reply+"Errore nella personalizzazione: "+err.Error()+"\nOrdine non aggiunto!")
 						return
-					} else if len(found) > 1 {
-						var matches []string
-						for _, d := range found {
-							matches = append(matches, d.Content)
-						}
-
-						t.bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+strings.Join(matches, "\n")+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
-						return
-					} else {
-						d := found[0]
-						reply = reply + "Trovato: " + d.Content + fmt.Sprintf(" (%s)\n", tuttobene.Titles[d.Type])
-
-						err := currChoice.Add(d)
-						if err != nil {
-							t.bot.Message(msg.Channel, reply+"Errore nella personalizzazione: "+err.Error()+"\nOrdine non aggiunto!")
-							return
-						}
 					}
 				}
 			}
