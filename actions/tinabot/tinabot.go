@@ -377,4 +377,13 @@ func (t *TinaBot) AddCommands() {
 	})
 
 	t.bot.RespondTo("^(?i)cron(.*)$", t.Cron)
+
+	t.bot.RespondTo("^(?i)rmorder (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+		u := args[1]
+
+		order := getOrder(t.brain)
+		old := clearUserOrder(order, u)
+		t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine di %s:\n%s", u, old))
+		t.brain.Set("order", order)
+	})
 }
