@@ -20,7 +20,7 @@ type Action func(*Bot, *BotMsg, *slack.User, ...string)
 type Bot struct {
 	UserID string
 
-	client *slack.Client
+	Client *slack.Client
 
 	actions map[*regexp.Regexp]Action
 	defact  SimpleAction
@@ -30,7 +30,7 @@ func New(botID string, api *slack.Client) *Bot {
 
 	bot := &Bot{
 		UserID:  botID,
-		client:  api,
+		Client:  api,
 		actions: make(map[*regexp.Regexp]Action),
 	}
 
@@ -46,7 +46,7 @@ func (bot *Bot) DefaultResponse(action SimpleAction) {
 }
 
 func (bot *Bot) Message(channel string, msg string) {
-	bot.client.PostMessage(channel, slack.MsgOptionText(msg, false))
+	bot.Client.PostMessage(channel, slack.MsgOptionText(msg, false))
 }
 
 func (bot *Bot) validMessage(msg *BotMsg) bool {
@@ -66,7 +66,7 @@ func (bot *Bot) HandleMsg(channel, username, text string) {
 
 	txt := bot.cleanupMsg(msg.Text)
 
-	user, err := bot.client.GetUserInfo(msg.User)
+	user, err := bot.Client.GetUserInfo(msg.User)
 	if err != nil {
 		log.Println(err.Error())
 		return

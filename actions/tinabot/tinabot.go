@@ -232,22 +232,77 @@ func New(bot *slackbot.Bot, b *brain.Brain) *TinaBot {
 	return &TinaBot{bot, b}
 }
 
+func getUserInfo(api *slack.Client, user string) *slack.User {
+	if strings.HasPrefix(user, "<@") {
+		user = strings.Trim(user, "<@>")
+		u, err := api.GetUserInfo(user)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		return u
+	}
+
+	users, err := api.GetUsers()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	for _, u := range users {
+		if strings.ToLower(u.Name) == strings.ToLower(user) {
+			return &u
+		}
+	}
+	return nil
+}
+
 func (t *TinaBot) AddCommands() {
 
 	t.bot.DefaultResponse(func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User) {
 		t.bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.")
 	})
 
-	t.bot.RespondTo("^(?i)per me (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
-		dish := args[1]
+	t.bot.RespondTo("^(?i)per (.*) (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+		dest := args[1]
+		dish := args[2]
+
+		destUser := user
+		destName := user.Name
+		if dest != "me" {
+			destUser = getUserInfo(t.bot.Client, dest)
+		}
+		warnCh := ""
+
+		if destUser != nil {
+			if destUser.ID != user.ID {
+				destName = destUser.Name
+				_, _, ch, err := b.Client.OpenIMChannel(destUser.ID)
+				if err != nil {
+					log.Println(err)
+				} else {
+					warnCh = ch
+				}
+			}
+		} else {
+			if !strings.HasPrefix(dest, "guest_") {
+				t.bot.Message(msg.Channel, fmt.Sprintf("Utente '%s' non trovato. Se vuoi ordinare per conto di un ospite usa il prefisso *guest_* per il nome", dest))
+				return
+			}
+			destName = dest
+		}
 
 		if strings.ToLower(dish) == "niente" {
 			order := getOrder(t.brain)
-			old := clearUserOrder(order, user.Name)
-			t.bot.Message(msg.Channel, "Ok, cancello ordine:\n"+old)
+			old := clearUserOrder(order, destName)
+			t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine per %s:\n%s", destName, old))
 			t.brain.Set("order", order)
+			if warnCh != "" {
+				t.bot.Message(warnCh, fmt.Sprintf("Mi spiace disturbarti, volevo informarti che <@%s> ha appena cancellato il tuo ordine:\n%s", user.ID, old))
+			}
 			return
 		}
+
 		var menu tuttobene.Menu
 		err := t.brain.Get("menu", &menu)
 		if err != nil {
@@ -306,12 +361,14 @@ func (t *TinaBot) AddCommands() {
 			}
 			choice = append(choice, currChoice)
 		}
-		u := user.Name
+
 		order := getOrder(t.brain)
-		clearUserOrder(order, user.Name)
+		clearUserOrder(order, destName)
+		var list []string
 		for _, c := range choice {
-			order.Dishes[c.String()] = append(order.Dishes[c.String()], u)
-			order.Users[u] = append(order.Users[u], c)
+			order.Dishes[c.String()] = append(order.Dishes[c.String()], destName)
+			order.Users[destName] = append(order.Users[destName], c)
+			list = append(list, c.String())
 		}
 		t.brain.Set("order", order)
 		l := len(choice)
@@ -319,7 +376,10 @@ func (t *TinaBot) AddCommands() {
 		if l > 1 {
 			c = "i"
 		}
-		t.bot.Message(msg.Channel, reply+fmt.Sprintf("Ok, aggiunt%s %d piatt%s per %s", c, l, c, u))
+		t.bot.Message(msg.Channel, reply+fmt.Sprintf("Ok, aggiunt%s %d piatt%s per %s", c, l, c, destName))
+		if warnCh != "" {
+			t.bot.Message(warnCh, fmt.Sprintf("Ti volevo informare che <@%s> ha ordinato i seguenti piatti per conto tuo:\n%s", user.ID, strings.Join(list, "\n")))
+		}
 	})
 
 	t.bot.RespondTo("^(?i)ordine$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
