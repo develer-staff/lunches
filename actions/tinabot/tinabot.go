@@ -29,9 +29,17 @@ func (u *UserChoice) Customized() bool {
 }
 
 func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
-	if (dish.Type == tuttobene.Primo && u.DishMask != 0) ||
-		(dish.Type == tuttobene.Secondo && (u.DishMask&^(1<<uint(tuttobene.Contorno))) != 0) ||
-		(dish.Type == tuttobene.Contorno && (u.DishMask&^(1<<uint(tuttobene.Contorno)|1<<uint(tuttobene.Secondo))) != 0) {
+	allowedMask := map[tuttobene.MenuRowType]uint{
+		tuttobene.Empty:       0,
+		tuttobene.Primo:       0,
+		tuttobene.Secondo:     1<<uint(tuttobene.Contorno) | 1<<uint(tuttobene.Vegetariano),
+		tuttobene.Contorno:    1<<uint(tuttobene.Secondo) | 1<<uint(tuttobene.Contorno) | 1<<uint(tuttobene.Vegetariano),
+		tuttobene.Vegetariano: 1<<uint(tuttobene.Secondo) | 1<<uint(tuttobene.Contorno) | 1<<uint(tuttobene.Vegetariano),
+		tuttobene.Frutta:      0,
+		tuttobene.Panino:      0,
+	}
+
+	if u.DishMask&^allowedMask[dish.Type] != 0 {
 		return errors.New("è possibile solo comporre piatti formati da un secondo e contorno/i")
 	}
 
