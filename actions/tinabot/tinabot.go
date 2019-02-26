@@ -271,42 +271,40 @@ func (t *TinaBot) AddCommands() {
 		t.bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.")
 	})
 
-	t.bot.RespondTo("^(?i)per (.*) (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+	t.bot.RespondTo("^(?i)per (\\S+) (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		dest := args[1]
 		dish := args[2]
 
 		destUser := user
 		destName := user.Name
-		if dest != "me" {
-			destUser = getUserInfo(t.bot.Client, dest)
-		}
-		warnCh := ""
+		destCh := ""
 
-		if destUser != nil {
-			if destUser.ID != user.ID {
+		if strings.ToLower(dest) != "me" {
+			destUser = getUserInfo(t.bot.Client, dest)
+			if destUser != nil {
 				destName = destUser.Name
 				_, _, ch, err := b.Client.OpenIMChannel(destUser.ID)
 				if err != nil {
 					log.Println(err)
 				} else {
-					warnCh = ch
+					destCh = ch
 				}
+			} else {
+				if !strings.HasPrefix(dest, "guest_") {
+					t.bot.Message(msg.Channel, fmt.Sprintf("Utente '%s' non trovato. Se vuoi ordinare per conto di un ospite usa il prefisso *guest_* nel nome", dest))
+					return
+				}
+				destName = dest
 			}
-		} else {
-			if !strings.HasPrefix(dest, "guest_") {
-				t.bot.Message(msg.Channel, fmt.Sprintf("Utente '%s' non trovato. Se vuoi ordinare per conto di un ospite usa il prefisso *guest_* per il nome", dest))
-				return
-			}
-			destName = dest
 		}
 
 		if strings.ToLower(dish) == "niente" {
 			order := getOrder(t.brain)
 			old := clearUserOrder(order, destName)
-			t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine per %s:\n%s", destName, old))
 			t.brain.Set("order", order)
-			if warnCh != "" {
-				t.bot.Message(warnCh, fmt.Sprintf("Mi spiace disturbarti, volevo informarti che <@%s> ha appena cancellato il tuo ordine:\n%s", user.ID, old))
+			t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine per %s:\n%s", destName, old))
+			if destCh != "" {
+				t.bot.Message(destCh, fmt.Sprintf("Mi spiace disturbarti, volevo informarti che <@%s> ha appena cancellato il tuo ordine:\n%s", user.ID, old))
 			}
 			return
 		}
@@ -385,8 +383,8 @@ func (t *TinaBot) AddCommands() {
 			c = "i"
 		}
 		t.bot.Message(msg.Channel, reply+fmt.Sprintf("Ok, aggiunt%s %d piatt%s per %s", c, l, c, destName))
-		if warnCh != "" {
-			t.bot.Message(warnCh, fmt.Sprintf("Ti volevo informare che <@%s> ha ordinato i seguenti piatti per conto tuo:\n%s", user.ID, strings.Join(list, "\n")))
+		if destCh != "" {
+			t.bot.Message(destCh, fmt.Sprintf("Ti volevo informare che <@%s> ha ordinato i seguenti piatti per conto tuo:\n%s", user.ID, strings.Join(list, "\n")))
 		}
 	})
 
