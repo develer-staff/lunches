@@ -9,7 +9,6 @@ import (
 
 	"github.com/develersrl/lunches/models"
 	"github.com/gobuffalo/buffalo-pop/pop/popmw"
-	csrf "github.com/gobuffalo/mw-csrf"
 	i18n "github.com/gobuffalo/mw-i18n"
 	"github.com/gobuffalo/packr"
 )
@@ -48,7 +47,7 @@ func App() *buffalo.App {
 
 		// Protect against CSRF attacks. https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)
 		// Remove to disable this.
-		app.Use(csrf.New)
+		//app.Use(csrf.New)
 
 		// Wraps each request in a transaction.
 		//  c.Value("tx").(*pop.Connection)
@@ -61,6 +60,7 @@ func App() *buffalo.App {
 		app.GET("/", HomeHandler)
 
 		app.POST("/slack/handler", SlackHandler)
+		app.POST("/email/handler", EmailHandler)
 		app.ServeFiles("/", assetsBox) // serve files from the public directory
 	}
 
