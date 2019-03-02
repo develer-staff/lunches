@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -17,56 +16,14 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type Order struct {
-	Timestamp time.Time
-	Dishes    map[string][]string     //map dishes with users
-	Users     map[string][]UserChoice //map each user to his/her dishes
-}
-
-func (o *Order) Sorted() []string {
-	// Create a map of ordered string -> rendered string
-	dishmap := make(map[string]string)
-	for _, choices := range o.Users {
-		for _, c := range choices {
-			dishmap[c.OrdString()] = c.String()
-		}
-	}
-
-	// extract from the map all the ordered strings
-	var ordstring []string
-	for k := range dishmap {
-		ordstring = append(ordstring, k)
-	}
-
-	// sort them
-	sort.Slice(ordstring, func(i, j int) bool {
-		return strings.Compare(ordstring[i], ordstring[j]) < 0
-	})
-
-	// return the ordered rendered strings
-	var out []string
-	for _, d := range ordstring {
-		out = append(out, dishmap[d])
-	}
-	return out
-}
-
-func NewOrder() *Order {
-	return &Order{
-		Timestamp: time.Now(),
-		Dishes:    make(map[string][]string),
-		Users:     make(map[string][]UserChoice),
-	}
-}
-
 func getOrder(brain *brain.Brain) *Order {
 	var order Order
-	err := brain.Get("order", &order)
-	if err != nil {
+
+	if order.Load(brain) != nil {
 		return NewOrder()
 	}
 
-	if time.Since(order.Timestamp).Hours() > 13 {
+	if time.Since(order.Timestamp).Hours() > 15 {
 		log.Println("Deleting old order")
 		return NewOrder()
 	}
@@ -95,26 +52,6 @@ func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 		}
 	}
 	return matches
-}
-
-func clearUserOrder(order *Order, user string) string {
-	delete(order.Users, user)
-	var deleted []string
-
-	for d, users := range order.Dishes {
-		for i, u := range users {
-			if u == user {
-				deleted = append(deleted, d)
-				order.Dishes[d] = append(order.Dishes[d][:i], order.Dishes[d][i+1:]...)
-				break
-			}
-		}
-		if len(order.Dishes[d]) == 0 {
-			delete(order.Dishes, d)
-		}
-	}
-
-	return strings.Join(deleted, "\n")
 }
 
 func renderMenu(menu tuttobene.Menu) string {
@@ -234,8 +171,9 @@ func (t *TinaBot) AddCommands() {
 
 		if strings.ToLower(dish) == "niente" {
 			order := getOrder(t.brain)
-			old := clearUserOrder(order, destName)
-			t.brain.Set("order", order)
+			old := order.ClearUser(destName)
+			order.Save(t.brain)
+
 			t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine per %s:\n%s", destName, old))
 			if destCh != "" {
 				t.bot.Message(destCh, fmt.Sprintf("Mi spiace disturbarti, volevo informarti che <@%s> ha appena cancellato il tuo ordine:\n%s", user.ID, old))
@@ -303,14 +241,9 @@ func (t *TinaBot) AddCommands() {
 		}
 
 		order := getOrder(t.brain)
-		clearUserOrder(order, destName)
-		var list []string
-		for _, c := range choice {
-			order.Dishes[c.String()] = append(order.Dishes[c.String()], destName)
-			order.Users[destName] = append(order.Users[destName], c)
-			list = append(list, c.String())
-		}
-		t.brain.Set("order", order)
+		list := order.Set(destName, choice)
+		order.Save(t.brain)
+
 		l := len(choice)
 		c := "o"
 		if l > 1 {
@@ -324,24 +257,20 @@ func (t *TinaBot) AddCommands() {
 
 	t.bot.RespondTo("^(?i)ordine$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		order := getOrder(t.brain)
+		t.bot.Message(msg.Channel, "Ecco l'ordine:\n"+order.String())
+	})
 
-		r := ""
-		for _, d := range order.Sorted() {
-			l := fmt.Sprintf("%d %s ", len(order.Dishes[d]), d)
-			l += "[ " + strings.Join(order.Dishes[d], ",") + " ]\n"
-			r = r + l
-		}
-
-		t.bot.Message(msg.Channel, "Ecco l'ordine:\n"+r)
+	t.bot.RespondTo("^(?i)cancella ordine$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+		order := NewOrder()
+		order.Save(t.brain)
+		t.bot.Message(msg.Channel, "Ordine cancellato")
 	})
 
 	t.bot.RespondTo("^(?i)email$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		order := getOrder(t.brain)
 		subj := "Ordine Develer del giorno " + order.Timestamp.Format("02/01/2006")
-		body := ""
-		for _, d := range order.Sorted() {
-			body += fmt.Sprintf("%d %s\n", len(order.Dishes[d]), d)
-		}
+		body := order.Format(false)
+
 		out := subj + "\n" + body + "\n\n" +
 			"<mailto:info@tuttobene-bar.it,sara@tuttobene-bar.it" +
 			"?subject=" + url.PathEscape(subj) +
@@ -417,8 +346,8 @@ func (t *TinaBot) AddCommands() {
 		u := args[1]
 
 		order := getOrder(t.brain)
-		old := clearUserOrder(order, u)
+		old := order.ClearUser(u)
 		t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine di %s:\n%s", u, old))
-		t.brain.Set("order", order)
+		order.Save(t.brain)
 	})
 }
