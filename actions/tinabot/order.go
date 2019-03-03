@@ -30,10 +30,10 @@ func NewOrder() *Order {
 
 // ClearUser clear the user order, returns the cleared dishes, if any
 func (order *Order) ClearUser(user string) string {
-	delete(order.Users, user)
 	var deleted []string
 
-	for d, users := range order.Dishes {
+	for _, d := range order.sorted() {
+		users := order.Dishes[d]
 		for i, u := range users {
 			if u == user {
 				deleted = append(deleted, d)
@@ -46,6 +46,7 @@ func (order *Order) ClearUser(user string) string {
 		}
 	}
 
+	delete(order.Users, user)
 	return strings.Join(deleted, "\n")
 }
 
