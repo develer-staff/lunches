@@ -114,9 +114,9 @@ func (order *Order) String() string {
 func (order *Order) Format(withUserNames bool) string {
 	var r []string
 	for _, d := range order.sorted() {
-		l := fmt.Sprintf("%d %s ", len(order.Dishes[d]), d)
+		l := fmt.Sprintf("%d %s", len(order.Dishes[d]), d)
 		if withUserNames {
-			l += "[ " + strings.Join(order.Dishes[d], ",") + " ]"
+			l += " [" + strings.Join(order.Dishes[d], ", ") + "]"
 		}
 		r = append(r, l)
 	}
