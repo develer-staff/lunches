@@ -67,6 +67,13 @@ func renderMenu(menu tuttobene.Menu) string {
 	}
 	return out
 }
+func Sanitize(s string) string {
+	s = strings.Replace(s, "“", "\"", -1)
+	s = strings.Replace(s, "”", "\"", -1)
+	s = strings.Replace(s, "‘", "'", -1)
+	s = strings.Replace(s, "’", "'", -1)
+	return s
+}
 
 func Unescape(s, sep string) string {
 
@@ -148,7 +155,7 @@ func (t *TinaBot) AddCommands() {
 
 	t.bot.RespondTo("^(?i)per (\\S+) (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		dest := args[1]
-		dish := args[2]
+		dish := Sanitize(args[2])
 
 		destUser := user
 		destName := user.Name
@@ -286,7 +293,7 @@ func (t *TinaBot) AddCommands() {
 	t.bot.RespondTo("^(?i)menu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		var menu []string
 		if args[1] != "" {
-			menu = strings.Split(strings.TrimSpace(args[1]), "\n")
+			menu = strings.Split(strings.TrimSpace(Sanitize(args[1])), "\n")
 		} else {
 			menu = nil
 		}
