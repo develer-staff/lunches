@@ -60,6 +60,6 @@ Verrà fornito un link che autocompone una mail nel client di posta locale. Chiu
 ‘@Tinabot 9000 menu‘
 
 *PER IMPOSTARE IL MENÙ DEI PIATTI:*
-‘@Tinabot 9000 menu <stringa menu>‘
+‘@Tinabot 9000 setmenu <stringa menu>‘
 *<stringa menu>* può essere multilinea. E' sufficiente copiare le celle dal file excel inviato per mail dal tuttobene. Chiunque può impostare il menù.
 `

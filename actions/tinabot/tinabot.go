@@ -291,22 +291,24 @@ func (t *TinaBot) AddCommands() {
 	})
 
 	t.bot.RespondTo("^(?i)menu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
-		var menu []string
+
 		if args[1] != "" {
-			menu = strings.Split(strings.TrimSpace(Sanitize(args[1])), "\n")
-		} else {
-			menu = nil
+			t.bot.Message(msg.Channel, "Se stai cercando di impostare il menù, usa il comando `setmenu`\nPer vedere il menù corrente, usa il comando `menu` senza argomenti.")
+			return
 		}
 
-		if menu == nil {
-			var m tuttobene.Menu
-			err := t.brain.Get("menu", &m)
-			if err == redis.Nil {
-				t.bot.Message(msg.Channel, "Non c'è nessun menu impostato!")
-			} else {
-				t.bot.Message(msg.Channel, "Il menu è:\n"+renderMenu(m))
-			}
+		var m tuttobene.Menu
+		err := t.brain.Get("menu", &m)
+		if err == redis.Nil {
+			t.bot.Message(msg.Channel, "Non c'è nessun menù impostato!")
 		} else {
+			t.bot.Message(msg.Channel, "Il menù è:\n"+renderMenu(m))
+		}
+	})
+
+	t.bot.RespondTo("^(?i)setmenu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+		if args[1] != "" {
+			menu := strings.Split(strings.TrimSpace(Sanitize(args[1])), "\n")
 			m, err := tuttobene.ParseMenuRows(menu)
 			if err != nil {
 				t.bot.Message(msg.Channel, "Menu parse error: "+err.Error())
@@ -314,6 +316,8 @@ func (t *TinaBot) AddCommands() {
 			}
 			t.brain.Set("menu", *m)
 			t.bot.Message(msg.Channel, "Ok, il menu è:\n"+renderMenu(*m))
+		} else {
+			t.bot.Message(msg.Channel, "Non hai indicato nessun nuovo menù!")
 		}
 	})
 
