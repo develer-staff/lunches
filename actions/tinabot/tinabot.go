@@ -139,7 +139,11 @@ func getUserInfo(api *slack.Client, user string) *slack.User {
 func (t *TinaBot) AddCommands() {
 
 	t.bot.DefaultResponse(func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User) {
-		t.bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.")
+		t.bot.Message(msg.Channel, "Mi dispiace "+user.Name+", purtroppo non posso farlo.\nProva con `aiuto` per vedere l'elenco delle cose che posso fare.")
+	})
+
+	t.bot.RespondTo("^(?i)(help|aiut).*$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+		t.bot.Message(msg.Channel, strings.Replace(HelpStr, "‘", "`", -1))
 	})
 
 	t.bot.RespondTo("^(?i)per (\\S+) (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
