@@ -1,7 +1,7 @@
 package tinabot
 
 // HelpStr is Tinabot help string
-const HelpStr = `Elenco domandi supportati da tinabot9000:
+const HelpStr = `Elenco comandi supportati da tinabot9000:
 
 *PER ORDINARE UN PIATTO:*
 ‘@Tinabot 9000 per <utente> <ordine>‘
