@@ -19,11 +19,18 @@ import (
 func getOrder(brain *brain.Brain) *Order {
 	var order Order
 
+	loc, err := time.LoadLocation("Europe/Rome")
+	if err != nil {
+		log.Println("LoadLocation error: ", err)
+		return nil
+	}
+	y, m, d := time.Now().In(loc).Date()
+
 	if order.Load(brain) != nil {
 		return NewOrder()
 	}
-
-	if time.Since(order.Timestamp).Hours() > 15 {
+	ts := order.Timestamp
+	if y != ts.Year() || m != ts.Month() || d != ts.Day() {
 		log.Println("Deleting old order")
 		return NewOrder()
 	}

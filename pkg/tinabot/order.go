@@ -2,6 +2,7 @@ package tinabot
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"time"
@@ -21,8 +22,14 @@ type Order struct {
 
 // NewOrder returns a new empty order
 func NewOrder() *Order {
+	loc, err := time.LoadLocation("Europe/Rome")
+	if err != nil {
+		log.Println("LoadLocation error: ", err)
+		return nil
+	}
+
 	return &Order{
-		Timestamp: time.Now(),
+		Timestamp: time.Now().In(loc),
 		Dishes:    make(map[string][]string),
 		Users:     make(map[string][]UserChoice),
 	}
