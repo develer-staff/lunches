@@ -16,15 +16,11 @@ import (
 
 var _ = Namespace("tinabot", func() {
 
-	Desc("Cron", "Execute scheduled tasks")
+	Desc("cron", "Execute scheduled tasks")
 	Add("cron", func(c *Context) error {
 		redisURL := os.Getenv("REDIS_URL")
 		if redisURL == "" {
 			log.Fatalln("No redis URL found!")
-		}
-		token := os.Getenv("SLACK_BOT_TOKEN")
-		if token == "" {
-			log.Fatalln("No slackbot token found!")
 		}
 
 		timerInterval := 10 * time.Minute
@@ -34,11 +30,6 @@ var _ = Namespace("tinabot", func() {
 			if err != nil {
 				timerInterval = time.Duration(n) * time.Minute
 			}
-		}
-
-		foodChannel := os.Getenv("FOOD_CHANNEL")
-		if foodChannel == "" {
-			log.Fatalln("No food channel set!")
 		}
 
 		brain := brain.New(redisURL)
@@ -62,7 +53,7 @@ var _ = Namespace("tinabot", func() {
 				log.Println(err)
 				return nil
 			}
-			txt := r[1]
+			txt := strings.TrimSpace(r[1])
 			loc, err := time.LoadLocation("Europe/Rome")
 			if err != nil {
 				log.Println("LoadLocation error: ", err)
@@ -74,11 +65,40 @@ var _ = Namespace("tinabot", func() {
 
 			if now.Add(timerInterval).Sub(next) > 0 {
 				log.Printf("Executing cron #%d - %s", i, s)
-				api := slack.New(token)
-				api.PostMessage(foodChannel, slack.MsgOptionText(txt, false))
-			}
 
+				args := strings.Split(txt, " ")
+				if len(args) < 1 {
+					log.Println("No task specified!")
+					return nil
+				}
+				task := "tinabot:" + args[0]
+				ctx := NewContext(task)
+				ctx.Args = args[1:]
+				err := Run(task, ctx)
+				if err != nil {
+					log.Println(err)
+				}
+				return err
+
+			}
 		}
+		return nil
+	})
+
+	Desc("post", "post on slack. Usage: post <channel> <message>")
+	Add("post", func(c *Context) error {
+		token := os.Getenv("SLACK_BOT_TOKEN")
+		if token == "" {
+			log.Fatalln("No slackbot token found!")
+		}
+
+		if len(c.Args) < 2 {
+			log.Fatalln("Not enough arguments, usage: post <channel> <message>")
+		}
+		channel := c.Args[0]
+
+		api := slack.New(token)
+		api.PostMessage(channel, slack.MsgOptionText(strings.Join(c.Args[1:], " "), false))
 		return nil
 	})
 })
