@@ -1,14 +1,18 @@
 package grifts
 
 import (
+	"context"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/develersrl/lunches/pkg/tinabot"
+
 	"github.com/develersrl/lunches/pkg/brain"
 	"github.com/go-redis/redis"
+	"github.com/mailgun/mailgun-go/v3"
 	. "github.com/markbates/grift/grift"
 	"github.com/nlopes/slack"
 	"github.com/robfig/cron"
@@ -100,5 +104,66 @@ var _ = Namespace("tinabot", func() {
 		api := slack.New(token)
 		api.PostMessage(channel, slack.MsgOptionText(strings.Join(c.Args[1:], " "), false))
 		return nil
+	})
+
+	Desc("sendmail", "send the email of the lunch order to the given address(es)")
+	Add("sendmail", func(c *Context) error {
+
+		domain := os.Getenv("MAILGUN_DOMAIN")
+		if domain == "" {
+			log.Println("MAILGUN_DOMAIN not set")
+			return nil
+		}
+
+		apiKey := os.Getenv("MAILGUN_API_KEY")
+		if apiKey == "" {
+			log.Println("MAILGUN_API_KEY not set")
+			return nil
+		}
+
+		if len(c.Args) < 1 {
+			log.Println("No recipients found!")
+			return nil
+		}
+
+		loc, err := time.LoadLocation("Europe/Rome")
+		if err != nil {
+			log.Println("LoadLocation error: ", err)
+			return nil
+		}
+
+		redisURL := os.Getenv("REDIS_URL")
+		if redisURL == "" {
+			log.Fatalln("No redis URL found!")
+		}
+
+		brain := brain.New(redisURL)
+		defer brain.Close()
+
+		var order tinabot.Order
+		order.Load(brain)
+
+		ts := order.Timestamp
+		now := time.Now().In(loc)
+		year, month, day := now.Date()
+
+		if year != ts.Year() || month != ts.Month() || day != ts.Day() {
+			return nil
+		}
+
+		mg := mailgun.NewMailgun(domain, apiKey)
+		to := strings.Join(c.Args, ",")
+
+		subj := "Ordine Develer del giorno " + order.Timestamp.Format("02/01/2006")
+		from := "cibo@develer.com"
+		body := order.Format(false)
+		m := mg.NewMessage(from, subj, body, to)
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer cancel()
+
+		_, id, err := mg.Send(ctx, m)
+		log.Println("Sendmail ID", id)
+		return err
 	})
 })

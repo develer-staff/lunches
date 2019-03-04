@@ -15,6 +15,7 @@ require (
 	github.com/gobuffalo/suite v2.6.0+incompatible
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7
+	github.com/mailgun/mailgun-go/v3 v3.3.0
 	github.com/markbates/grift v1.0.5
 	github.com/markbates/inflect v1.0.4
 	github.com/nlopes/slack v0.5.0
