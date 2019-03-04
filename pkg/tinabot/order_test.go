@@ -3,7 +3,7 @@ package tinabot
 import (
 	"testing"
 
-	"github.com/develersrl/lunches/actions/brain"
+	"github.com/develersrl/lunches/pkg/brain"
 	"github.com/develersrl/lunches/pkg/tuttobene"
 )
 

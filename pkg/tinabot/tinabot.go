@@ -10,8 +10,8 @@ import (
 
 	"github.com/nlopes/slack"
 
-	"github.com/develersrl/lunches/actions/brain"
-	"github.com/develersrl/lunches/actions/slackbot"
+	"github.com/develersrl/lunches/pkg/brain"
+	"github.com/develersrl/lunches/pkg/slackbot"
 	"github.com/develersrl/lunches/pkg/tuttobene"
 	"github.com/go-redis/redis"
 )

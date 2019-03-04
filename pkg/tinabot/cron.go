@@ -7,7 +7,7 @@ import (
 
 	"github.com/nlopes/slack"
 
-	"github.com/develersrl/lunches/actions/slackbot"
+	"github.com/develersrl/lunches/pkg/slackbot"
 	"github.com/robfig/cron"
 
 	"github.com/go-redis/redis"

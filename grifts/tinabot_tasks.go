@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/develersrl/lunches/actions/brain"
+	"github.com/develersrl/lunches/pkg/brain"
 	"github.com/go-redis/redis"
 	. "github.com/markbates/grift/grift"
 	"github.com/nlopes/slack"

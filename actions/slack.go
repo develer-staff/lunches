@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/develersrl/lunches/actions/brain"
-	"github.com/develersrl/lunches/actions/slackbot"
-	"github.com/develersrl/lunches/actions/tinabot"
+	"github.com/develersrl/lunches/pkg/brain"
+	"github.com/develersrl/lunches/pkg/slackbot"
+	"github.com/develersrl/lunches/pkg/tinabot"
 	"github.com/gobuffalo/buffalo"
 	"github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
