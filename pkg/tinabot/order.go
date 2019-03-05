@@ -131,3 +131,17 @@ func (order *Order) Format(withUserNames bool) string {
 
 	return strings.Join(r, "\n")
 }
+
+// IsUpdated returns true if it's today's order, false otherwise
+func (order *Order) IsUpdated() bool {
+	loc, err := time.LoadLocation("Europe/Rome")
+
+	if err != nil {
+		log.Println("LoadLocation error: ", err)
+		return false
+	}
+
+	y, m, d := time.Now().In(loc).Date()
+	ts := order.Timestamp
+	return (y == ts.Year() && m == ts.Month() && d == ts.Day())
+}

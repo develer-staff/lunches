@@ -2,6 +2,7 @@ package tinabot
 
 import (
 	"testing"
+	"time"
 
 	"github.com/develersrl/lunches/pkg/brain"
 	"github.com/develersrl/lunches/pkg/tuttobene"
@@ -53,4 +54,7 @@ func TestOrder(t *testing.T) {
 	assertEqual(t, e, nil, "")
 	assertEqual(t, order.String(), neworder.String(), "")
 	assertEqual(t, order.Timestamp.Format("2006-01-02T15:04:05.999999-07:00"), neworder.Timestamp.Format("2006-01-02T15:04:05.999999-07:00"), "")
+	assertEqual(t, neworder.IsUpdated(), true, "")
+	neworder.Timestamp = neworder.Timestamp.Add(24 * time.Hour)
+	assertEqual(t, neworder.IsUpdated(), false, "")
 }
