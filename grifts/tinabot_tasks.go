@@ -141,7 +141,15 @@ var _ = Namespace("tinabot", func() {
 		}
 
 		mg := mailgun.NewMailgun(domain, apiKey)
-		to := strings.Join(c.Args, ",")
+		var addresses []string
+		for _, a := range c.Args {
+			if strings.HasPrefix(a, "<mailto:") {
+				a = strings.TrimPrefix(a, "<mailto:")
+				a = strings.Split(a, "|")[0]
+			}
+			addresses = append(addresses, a)
+		}
+		to := strings.Join(addresses, ",")
 
 		subj := "Ordine Develer del giorno " + order.Timestamp.Format("02/01/2006")
 		from := "cibo@develer.com"
