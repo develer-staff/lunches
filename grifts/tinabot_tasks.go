@@ -108,7 +108,6 @@ var _ = Namespace("tinabot", func() {
 
 	Desc("sendmail", "send the email of the lunch order to the given address(es)")
 	Add("sendmail", func(c *Context) error {
-
 		domain := os.Getenv("MAILGUN_DOMAIN")
 		if domain == "" {
 			log.Println("MAILGUN_DOMAIN not set")
@@ -126,12 +125,6 @@ var _ = Namespace("tinabot", func() {
 			return nil
 		}
 
-		loc, err := time.LoadLocation("Europe/Rome")
-		if err != nil {
-			log.Println("LoadLocation error: ", err)
-			return nil
-		}
-
 		redisURL := os.Getenv("REDIS_URL")
 		if redisURL == "" {
 			log.Fatalln("No redis URL found!")
@@ -143,11 +136,7 @@ var _ = Namespace("tinabot", func() {
 		var order tinabot.Order
 		order.Load(brain)
 
-		ts := order.Timestamp
-		now := time.Now().In(loc)
-		year, month, day := now.Date()
-
-		if year != ts.Year() || month != ts.Month() || day != ts.Day() {
+		if !order.IsUpdated() {
 			return nil
 		}
 
