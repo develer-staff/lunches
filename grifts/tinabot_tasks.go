@@ -82,8 +82,6 @@ var _ = Namespace("tinabot", func() {
 				if err != nil {
 					log.Println(err)
 				}
-				return err
-
 			}
 		}
 		return nil
