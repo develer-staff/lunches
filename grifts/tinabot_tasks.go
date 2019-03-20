@@ -46,23 +46,24 @@ var _ = Namespace("tinabot", func() {
 			return nil
 		}
 
+		loc, err := time.LoadLocation("Europe/Rome")
+		if err != nil {
+			log.Println("LoadLocation error: ", err)
+			return nil
+		}
+
 		for i, s := range sched {
 			r := strings.SplitN(s, ";", 2)
 			if len(r) < 2 {
 				log.Println("Malformed cron string: " + s)
-				return nil
+				continue
 			}
 			sch, err := cron.ParseStandard(r[0])
 			if err != nil {
 				log.Println(err)
-				return nil
+				continue
 			}
 			txt := strings.TrimSpace(r[1])
-			loc, err := time.LoadLocation("Europe/Rome")
-			if err != nil {
-				log.Println("LoadLocation error: ", err)
-				return nil
-			}
 			now := time.Now().In(loc)
 			now = now.Add(-timerInterval / 2)
 			next := sch.Next(now)
@@ -73,7 +74,7 @@ var _ = Namespace("tinabot", func() {
 				args := strings.Split(txt, " ")
 				if len(args) < 1 {
 					log.Println("No task specified!")
-					return nil
+					continue
 				}
 				task := "tinabot:" + args[0]
 				ctx := NewContext(task)
