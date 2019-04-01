@@ -41,7 +41,7 @@ func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 	dish = strings.TrimSpace(strings.ToLower(dish))
 
 	var matches []tuttobene.MenuRow
-	for _, m := range menu {
+	for _, m := range menu.Rows {
 		if strings.EqualFold(m.Content, dish) {
 			return []tuttobene.MenuRow{m}
 		}
@@ -57,7 +57,7 @@ func renderMenu(menu tuttobene.Menu) string {
 	menutype := tuttobene.Unknonwn
 
 	out := ""
-	for _, r := range menu {
+	for _, r := range menu.Rows {
 		if r.Type != menutype {
 			out = out + "\n*" + strings.ToUpper(tuttobene.Titles[r.Type]) + "*\n"
 			menutype = r.Type

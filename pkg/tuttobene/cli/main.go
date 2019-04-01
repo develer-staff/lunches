@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/develersrl/lunches/pkg/tuttobene"
 	"io/ioutil"
 	"os"
+
+	"github.com/develersrl/lunches/pkg/tuttobene"
 )
 
 const (
@@ -67,7 +68,7 @@ func main() {
 		fmt.Println(string(out))
 	case "tina":
 		var currentSection tuttobene.MenuRowType
-		for _, m := range *menu {
+		for _, m := range menu.Rows {
 			if currentSection != m.Type {
 				currentSection = m.Type
 				fmt.Println("\n" + TinaFormatTitles[currentSection])
