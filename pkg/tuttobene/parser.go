@@ -81,8 +81,13 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 
 	// Check tuttobene menu format (dishes in column 0 or 1)
 	col := 0
-	if len(s.Rows[0].Cells) >= 2 && strings.TrimSpace(s.Rows[0].Cells[1].String()) == "TUTTOBENE" {
-		col = 1
+	if len(s.Rows[0].Cells) >= 2 {
+		sheetTitle := s.Rows[0].Cells[1].String()
+		sheetTitle = strings.TrimSpace(sheetTitle)
+		sheetTitle = strings.ToLower(sheetTitle)
+		if sheetTitle == "tuttobene" {
+			col = 1
+		}
 	}
 
 	for _, r := range s.Rows {
