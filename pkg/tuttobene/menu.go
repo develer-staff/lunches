@@ -1,5 +1,9 @@
 package tuttobene
 
+import (
+	"time"
+)
+
 const (
 	Unknonwn MenuRowType = iota
 	Empty
@@ -19,4 +23,7 @@ type MenuRow struct {
 	IsDailyProposal bool
 }
 
-type Menu []MenuRow
+type Menu struct {
+	Rows []MenuRow
+	Date time.Time
+}

@@ -2,10 +2,15 @@ package tuttobene
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/juju/errors"
 	"github.com/tealeg/xlsx"
-	"io"
-	"strings"
 )
 
 var Titles = map[MenuRowType]string{
@@ -73,12 +78,17 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 	}
 
 	var rows = make([]string, 0)
-	for _, r := range s.Rows {
-		if len(r.Cells) < 2 {
-			continue
-		}
 
-		rows = append(rows, r.Cells[1].String())
+	// Check tuttobene menu format (dishes in column 0 or 1)
+	col := 0
+	if len(s.Rows[0].Cells) >= 2 && strings.TrimSpace(s.Rows[0].Cells[1].String()) == "TUTTOBENE" {
+		col = 1
+	}
+
+	for _, r := range s.Rows {
+		if len(r.Cells) >= col+1 {
+			rows = append(rows, r.Cells[col].String())
+		}
 	}
 
 	return ParseMenuRows(rows)
@@ -99,14 +109,18 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			continue
 		}
 
-		// Skip first empty rows
+		// Skip first empty rows/check menu date
 		if currentType == Unknonwn {
+			isDate, date := parseDate(standardizeSpaces(r))
+			if isDate {
+				menuRows.Date = date
+			}
 			continue
 		}
 
 		// Check if this is the end of the menu
 		if currentType == Panino && rowType == Empty {
-			return &menuRows, nil
+			break
 		}
 		if rowType == Empty {
 			continue
@@ -115,19 +129,19 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 		// Handle "Pasta al ragù, pesto o pomodoro (sono sempre disponibili)"
 		if strings.HasSuffix(content, "(sono sempre disponibili)") {
 
-			menuRows = append(menuRows, MenuRow{
+			menuRows.Rows = append(menuRows.Rows, MenuRow{
 				Content:         "Pasta al ragù",
 				Type:            currentType,
 				IsDailyProposal: false,
 			})
 
-			menuRows = append(menuRows, MenuRow{
+			menuRows.Rows = append(menuRows.Rows, MenuRow{
 				Content:         "Pasta al pesto",
 				Type:            currentType,
 				IsDailyProposal: false,
 			})
 
-			menuRows = append(menuRows, MenuRow{
+			menuRows.Rows = append(menuRows.Rows, MenuRow{
 				Content:         "Pasta al pomodoro",
 				Type:            currentType,
 				IsDailyProposal: false,
@@ -136,14 +150,117 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			continue
 		}
 
-		menuRows = append(menuRows, MenuRow{
+		menuRows.Rows = append(menuRows.Rows, MenuRow{
 			Content:         strings.TrimSpace(content),
 			Type:            currentType,
 			IsDailyProposal: isDailyProposal,
 		})
 	}
 
+	if (menuRows.Date == time.Time{}) {
+		loc, err := time.LoadLocation("Europe/Rome")
+		if err != nil {
+			log.Println("LoadLocation error: ", err)
+			return nil, err
+		}
+		menuRows.Date = time.Now().In(loc)
+	}
+
 	return &menuRows, nil
+}
+
+var testYear = -1
+
+func SetTestYear(year int) {
+	testYear = year
+}
+
+func parseDate(content string) (bool, time.Time) {
+
+	content = strings.ToLower(content)
+
+	months := []string{
+		"gennaio",
+		"febbraio",
+		"marzo",
+		"aprile",
+		"maggio",
+		"giugno",
+		"luglio",
+		"agosto",
+		"settembre",
+		"ottobre",
+		"novembre",
+		"dicembre",
+	}
+
+	weekDays := []string{
+		"dom",
+		"lun",
+		"mar",
+		"mer",
+		"gio",
+		"ven",
+		"sab",
+	}
+
+	args := strings.Split(content, " ")
+	if len(args) != 3 {
+		return false, time.Time{}
+	}
+
+	weekDay := -1
+	for i, d := range weekDays {
+		if strings.HasPrefix(args[0], d) {
+			weekDay = i
+			break
+		}
+	}
+	if weekDay == -1 {
+		return false, time.Time{}
+	}
+
+	cutset := ""
+	for _, c := range args[1] {
+		if !unicode.IsDigit(c) {
+			cutset = cutset + string(c)
+		}
+	}
+	dayString := strings.Trim(args[1], cutset)
+	day, err := strconv.Atoi(dayString)
+	if err != nil {
+		return false, time.Time{}
+	}
+
+	month := -1
+	for i, m := range months {
+		if strings.HasPrefix(args[2], m) {
+			month = i + 1
+			break
+		}
+	}
+	if month == -1 {
+		return false, time.Time{}
+	}
+
+	loc, err := time.LoadLocation("Europe/Rome")
+	if err != nil {
+		log.Println("LoadLocation error: ", err)
+		return false, time.Time{}
+	}
+
+	var year int
+	if testYear == -1 {
+		year = time.Now().In(loc).Year()
+	} else {
+		year = testYear
+	}
+	date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, loc)
+	if date.Weekday() != time.Weekday(weekDay) {
+		log.Println("Weekday mismatch!")
+		return false, time.Time{}
+	}
+	return true, date
 }
 
 func parseRow(content string) (string, MenuRowType, bool, bool) {
