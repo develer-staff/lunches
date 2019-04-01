@@ -56,7 +56,7 @@ func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 func renderMenu(menu tuttobene.Menu) string {
 	menutype := tuttobene.Unknonwn
 
-	out := ""
+	out := "Menù del giorno *" + menu.Date.Format("02/01/2006") + "*\n"
 	for _, r := range menu.Rows {
 		if r.Type != menutype {
 			out = out + "\n*" + strings.ToUpper(tuttobene.Titles[r.Type]) + "*\n"
@@ -301,7 +301,7 @@ func (t *TinaBot) AddCommands() {
 		if err == redis.Nil {
 			t.bot.Message(msg.Channel, "Non c'è nessun menù impostato!")
 		} else {
-			t.bot.Message(msg.Channel, "Il menù è:\n"+renderMenu(m))
+			t.bot.Message(msg.Channel, renderMenu(m))
 		}
 	})
 
@@ -314,7 +314,7 @@ func (t *TinaBot) AddCommands() {
 				return
 			}
 			t.brain.Set("menu", *m)
-			t.bot.Message(msg.Channel, "Ok, il menu è:\n"+renderMenu(*m))
+			t.bot.Message(msg.Channel, "Ok:\n"+renderMenu(*m))
 		} else {
 			t.bot.Message(msg.Channel, "Non hai indicato nessun nuovo menù!")
 		}
