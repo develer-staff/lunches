@@ -245,7 +245,7 @@ func TestParseMenu(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			SetTestYear(tt.year)
+			setTestYear(tt.year)
 			got, err := ParseMenuFile(tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseMenuFile() error = %v, wantErr %v", err, tt.wantErr)

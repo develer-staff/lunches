@@ -171,7 +171,7 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 
 var testYear = -1
 
-func SetTestYear(year int) {
+func setTestYear(year int) {
 	testYear = year
 }
 
