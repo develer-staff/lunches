@@ -11,6 +11,7 @@ import (
 	"github.com/develersrl/lunches/pkg/tuttobene"
 	"github.com/gobuffalo/buffalo"
 	"github.com/mailgun/mailgun-go/v3"
+	"github.com/nlopes/slack"
 )
 
 // EmailHandler default implementation.
@@ -60,6 +61,19 @@ func EmailHandler(c buffalo.Context) error {
 		log.Println(err)
 		return nil
 	}
+
+	token := os.Getenv("SLACK_BOT_TOKEN")
+	if token == "" {
+		log.Fatalln("No slackbot token found!")
+	}
+
+	channel := os.Getenv("FOOD_CHANNEL")
+	if channel == "" {
+		log.Println("No channel found!")
+		return nil
+	}
+	api := slack.New(token)
+
 	for i := 0; i < n; i++ {
 		f, h, err := c.Request().FormFile(fmt.Sprintf("attachment-%d", i+1))
 		if err != nil {
@@ -70,6 +84,7 @@ func EmailHandler(c buffalo.Context) error {
 		if strings.Contains(name, "menu") && strings.Contains(name, ".xlsx") {
 			if h.Size > 500000 {
 				log.Println("Attachemnt too large!")
+				api.PostMessage(channel, slack.MsgOptionText("Menu ricevuto, file in attachment di dimensioni eccessive!", false))
 				return nil
 			}
 			buf := make([]byte, h.Size)
@@ -84,6 +99,7 @@ func EmailHandler(c buffalo.Context) error {
 
 			if err != nil {
 				log.Println("Menu parse error: ", err)
+				api.PostMessage(channel, slack.MsgOptionText("Menu ricevuto, errore durante l'analisi: "+err.Error(), false))
 				return nil
 			}
 			redisURL := os.Getenv("REDIS_URL")
@@ -98,6 +114,9 @@ func EmailHandler(c buffalo.Context) error {
 			b.Set("menu", *m)
 
 			log.Println("Tuttobene menu parsed correctly")
+
+			date := m.Date.Format("02/01/2006")
+			api.PostMessage(channel, slack.MsgOptionText("Ho appena ricevuto e impostato correttamente il menu per il giorno "+date, false))
 			return nil
 		}
 
