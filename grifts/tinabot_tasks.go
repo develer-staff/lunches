@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/develersrl/lunches/pkg/tuttobene"
+
 	"github.com/develersrl/lunches/pkg/tinabot"
 
 	"github.com/develersrl/lunches/pkg/brain"
@@ -135,7 +137,13 @@ var _ = Namespace("tinabot", func() {
 		var order tinabot.Order
 		order.Load(brain)
 
-		if !order.IsUpdated() {
+		var menu tuttobene.Menu
+		err := brain.Get("menu", &menu)
+		if err == redis.Nil {
+			log.Println("No menu found")
+		}
+
+		if !menu.IsUpdated() || !order.IsUpdated() {
 			return nil
 		}
 
@@ -161,5 +169,46 @@ var _ = Namespace("tinabot", func() {
 		_, id, err := mg.Send(ctx, m)
 		log.Println("Sendmail ID", id)
 		return err
+	})
+
+	Desc("postmenu", "post the menu (if present) on the supplied channel")
+	Add("postmenu", func(c *Context) error {
+		if len(c.Args) < 1 {
+			log.Println("No channel specified!")
+			return nil
+		}
+		channel := c.Args[0]
+
+		redisURL := os.Getenv("REDIS_URL")
+		if redisURL == "" {
+			log.Fatalln("No redis URL found!")
+		}
+
+		brain := brain.New(redisURL)
+		defer brain.Close()
+
+		var menu tuttobene.Menu
+		err := brain.Get("menu", &menu)
+		if err == redis.Nil {
+			log.Println("No menu found")
+			return nil
+		}
+
+		if !menu.IsUpdated() {
+			log.Println("Menu not updated!")
+			return nil
+		}
+
+		token := os.Getenv("SLACK_BOT_TOKEN")
+		if token == "" {
+			log.Fatalln("No slackbot token found!")
+			return nil
+		}
+
+		api := slack.New(token)
+		api.PostMessage(channel, slack.MsgOptionText("Buongiorno!\nSono lieta di mostrarvi il menù di oggi:\n"+
+			menu.String()+
+			"\n-----------\nRicordatevi di ordinare il pranzo entro le 12:00, invierò la mail di ordine automaticamente!", false))
+		return nil
 	})
 })

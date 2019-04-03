@@ -53,19 +53,6 @@ func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 	return matches
 }
 
-func renderMenu(menu tuttobene.Menu) string {
-	menutype := tuttobene.Unknonwn
-
-	out := "Menù del giorno *" + menu.Date.Format("02/01/2006") + "*\n"
-	for _, r := range menu.Rows {
-		if r.Type != menutype {
-			out = out + "\n*" + strings.ToUpper(tuttobene.Titles[r.Type]) + "*\n"
-			menutype = r.Type
-		}
-		out = out + r.Content + "\n"
-	}
-	return out
-}
 func Sanitize(s string) string {
 	s = strings.Replace(s, "“", "\"", -1)
 	s = strings.Replace(s, "”", "\"", -1)
@@ -194,7 +181,12 @@ func (t *TinaBot) AddCommands() {
 		var menu tuttobene.Menu
 		err := t.brain.Get("menu", &menu)
 		if err != nil {
-			t.bot.Message(msg.Channel, "Nessun menu impostato!")
+			t.bot.Message(msg.Channel, "Nessun menù impostato!")
+			return
+		}
+
+		if !menu.IsUpdated() {
+			t.bot.Message(msg.Channel, "Credo che il menù non sia aggiornato, riporta la data del "+menu.Date.Format("02/01/2006"))
 			return
 		}
 
@@ -223,7 +215,7 @@ func (t *TinaBot) AddCommands() {
 					reply = reply + fmt.Sprintf("Aggiungo testualmente: '%s'\n", dish)
 					currChoice.Add(p)
 				} else if nDish == 0 {
-					t.bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menu che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
+					t.bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menù che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
 					return
 				} else if nDish > 1 {
 					var matches []string
@@ -301,7 +293,7 @@ func (t *TinaBot) AddCommands() {
 		if err == redis.Nil {
 			t.bot.Message(msg.Channel, "Non c'è nessun menù impostato!")
 		} else {
-			t.bot.Message(msg.Channel, renderMenu(m))
+			t.bot.Message(msg.Channel, "Ecco il menù:\n"+m.String())
 		}
 	})
 
@@ -314,7 +306,7 @@ func (t *TinaBot) AddCommands() {
 				return
 			}
 			t.brain.Set("menu", *m)
-			t.bot.Message(msg.Channel, "Ok:\n"+renderMenu(*m))
+			t.bot.Message(msg.Channel, "Ok, menù impostato:\n"+m.String())
 		} else {
 			t.bot.Message(msg.Channel, "Non hai indicato nessun nuovo menù!")
 		}
