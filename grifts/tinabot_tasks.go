@@ -171,13 +171,18 @@ var _ = Namespace("tinabot", func() {
 		return err
 	})
 
-	Desc("postmenu", "post the menu (if present) on the supplied channel")
+	Desc("postmenu", "post the menu (if present). Usage: postmenu <channel> <pre msg>; <post msg>")
 	Add("postmenu", func(c *Context) error {
 		if len(c.Args) < 1 {
 			log.Println("No channel specified!")
 			return nil
 		}
 		channel := c.Args[0]
+
+		msg := ""
+		if len(c.Args) > 1 {
+			msg = strings.Join(c.Args[1:], " ")
+		}
 
 		redisURL := os.Getenv("REDIS_URL")
 		if redisURL == "" {
@@ -195,7 +200,7 @@ var _ = Namespace("tinabot", func() {
 		}
 
 		if !menu.IsUpdated() {
-			log.Println("Menu not updated!")
+			log.Println("Found menu for " + menu.Date.Format("02/01/2006") + ", skipping menu posting")
 			return nil
 		}
 
@@ -204,11 +209,17 @@ var _ = Namespace("tinabot", func() {
 			log.Fatalln("No slackbot token found!")
 			return nil
 		}
+		var pre, post string
+		l := strings.SplitN(msg, ";", 2)
+		if len(l) > 0 {
+			pre = l[0] + "\n"
+		}
+		if len(l) > 1 {
+			post = "\n-----------\n" + l[1]
+		}
 
 		api := slack.New(token)
-		api.PostMessage(channel, slack.MsgOptionText("Buongiorno!\nSono lieta di mostrarvi il menù di oggi:\n"+
-			menu.String()+
-			"\n-----------\nRicordatevi di ordinare il pranzo entro le 12:00, invierò la mail di ordine automaticamente!", false))
+		api.PostMessage(channel, slack.MsgOptionText(pre+menu.String()+post, false))
 		return nil
 	})
 })
