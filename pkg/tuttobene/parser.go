@@ -99,6 +99,34 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 	return ParseMenuRows(rows)
 }
 
+func normalizeDish(r MenuRow) MenuRow {
+	if r.Type == Contorno {
+		tab := []struct {
+			Find, Replace string
+		}{
+			{
+				Find:    "grigliat",
+				Replace: " alla griglia",
+			},
+			{
+				Find:    "vapore",
+				Replace: " al vapore",
+			},
+		}
+
+		for _, t := range tab {
+			if strings.HasPrefix(strings.ToLower(r.Content), t.Find) {
+				l := strings.Split(r.Content, " ")
+				if len(l) == 2 {
+					dish := strings.Title(strings.ToLower(l[1]))
+					r.Content = dish + t.Replace
+				}
+			}
+		}
+	}
+	return r
+}
+
 // ParseMenuRows takes a slice of strings and returns a populated menu struct.
 func ParseMenuRows(rows []string) (*Menu, error) {
 	var (
@@ -155,11 +183,11 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			continue
 		}
 
-		menuRows.Rows = append(menuRows.Rows, MenuRow{
+		menuRows.Rows = append(menuRows.Rows, normalizeDish(MenuRow{
 			Content:         strings.TrimSpace(content),
 			Type:            currentType,
 			IsDailyProposal: isDailyProposal,
-		})
+		}))
 	}
 
 	if (menuRows.Date == time.Time{}) {
