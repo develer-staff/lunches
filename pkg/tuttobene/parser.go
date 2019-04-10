@@ -99,7 +99,7 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 	return ParseMenuRows(rows)
 }
 
-func normalizeDish(r MenuRow) MenuRow {
+func normalizeDish(r *MenuRow) *MenuRow {
 	if r.Type == Contorno {
 		tab := []struct {
 			Find, Replace string
@@ -162,19 +162,19 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 		// Handle "Pasta al ragù, pesto o pomodoro (sono sempre disponibili)"
 		if strings.HasSuffix(content, "(sono sempre disponibili)") {
 
-			menuRows.Rows = append(menuRows.Rows, MenuRow{
+			menuRows.Add(&MenuRow{
 				Content:         "Pasta al ragù",
 				Type:            currentType,
 				IsDailyProposal: false,
 			})
 
-			menuRows.Rows = append(menuRows.Rows, MenuRow{
+			menuRows.Add(&MenuRow{
 				Content:         "Pasta al pesto",
 				Type:            currentType,
 				IsDailyProposal: false,
 			})
 
-			menuRows.Rows = append(menuRows.Rows, MenuRow{
+			menuRows.Add(&MenuRow{
 				Content:         "Pasta al pomodoro",
 				Type:            currentType,
 				IsDailyProposal: false,
@@ -183,7 +183,7 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			continue
 		}
 
-		menuRows.Rows = append(menuRows.Rows, normalizeDish(MenuRow{
+		menuRows.Add(normalizeDish(&MenuRow{
 			Content:         strings.TrimSpace(content),
 			Type:            currentType,
 			IsDailyProposal: isDailyProposal,

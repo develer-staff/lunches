@@ -54,3 +54,16 @@ func (m *Menu) String() string {
 	}
 	return out
 }
+
+func (m *Menu) Add(mr *MenuRow) {
+
+	//Check and remove duplicate dishes, keep only the last one added
+	for i, r := range m.Rows {
+		if r.Content == mr.Content {
+			m.Rows = append(m.Rows[:i], m.Rows[i+1:]...)
+			break
+		}
+	}
+
+	m.Rows = append(m.Rows, *mr)
+}
