@@ -68,7 +68,7 @@ func (t *TinaBot) Remind(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.Us
 		if err == redis.Nil || len(remind) == 0 {
 			bot.Message(msg.Channel, "Non c'è nessun reminder impostato")
 		} else {
-			if val, ok := remind[user.Name]; ok {
+			if val, ok := remind[user.ID]; ok {
 				bot.Message(msg.Channel, formatReminder(val))
 			} else {
 				bot.Message(msg.Channel, "Non c'è nessun reminder impostato")
