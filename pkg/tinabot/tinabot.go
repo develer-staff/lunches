@@ -186,7 +186,7 @@ func (t *TinaBot) AddCommands() {
 		}
 
 		if !menu.IsUpdated() {
-			t.bot.Message(msg.Channel, "Credo che il menù non sia aggiornato, riporta la data del "+menu.Date.Format("02/01/2006"))
+			t.bot.Message(msg.Channel, "Non puoi ordinare, il menù non è quello di oggi, riporta la data del "+menu.Date.Format("02/01/2006"))
 			return
 		}
 
