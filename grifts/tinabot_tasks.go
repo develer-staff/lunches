@@ -90,7 +90,7 @@ var _ = Namespace("tinabot", func() {
 		return nil
 	})
 
-	Desc("post", "post on slack. Usage: post <channel> <message>")
+	Desc("post", "post on slack. Usage: post <channel> [<options>] <message>")
 	Add("post", func(c *Context) error {
 		token := os.Getenv("SLACK_BOT_TOKEN")
 		if token == "" {
@@ -98,12 +98,61 @@ var _ = Namespace("tinabot", func() {
 		}
 
 		if len(c.Args) < 2 {
-			log.Fatalln("Not enough arguments, usage: post <channel> <message>")
+			log.Fatalln("Not enough arguments, usage: post <channel> [<options>] <message>")
 		}
 		channel := c.Args[0]
+		onlyValidOrder := false
+		onlyValidMenu := false
+		startMsg := 1
+		for i := 0; i < len(c.Args); i++ {
+			opt := c.Args[i]
+			if strings.HasPrefix(opt, "-") {
+				startMsg = i + 1
+				// Post only if there is a valid order
+				if strings.Contains(opt, "o") {
+					onlyValidOrder = true
+				}
+
+				// Post only if there is a valid menu
+				if strings.Contains(opt, "m") {
+					onlyValidMenu = true
+				}
+			}
+		}
+
+		redisURL := os.Getenv("REDIS_URL")
+		if redisURL == "" {
+			log.Fatalln("No redis URL found!")
+		}
+
+		brain := brain.New(redisURL)
+		defer brain.Close()
+
+		var order tinabot.Order
+		order.Load(brain)
+
+		var menu tuttobene.Menu
+		err := brain.Get("menu", &menu)
+		if err == redis.Nil {
+			log.Println("No menu found")
+		}
+
+		if onlyValidMenu && (err == redis.Nil || !menu.IsUpdated()) {
+			return nil
+		}
+
+		if onlyValidOrder && !order.IsUpdated() {
+			return nil
+		}
+
+		msg := strings.Join(c.Args[startMsg:], " ")
+		msg = strings.Replace(msg, "$MENU", menu.String(), -1)
+		msg = strings.Replace(msg, "$ORDER_NONAMES", order.Format(false), -1)
+		msg = strings.Replace(msg, "$ORDER", order.Format(true), -1)
+		msg = strings.Replace(msg, "\\n", "\n", -1)
 
 		api := slack.New(token)
-		api.PostMessage(channel, slack.MsgOptionText(strings.Join(c.Args[1:], " "), false))
+		api.PostMessage(channel, slack.MsgOptionText(msg, false))
 		return nil
 	})
 
@@ -169,57 +218,5 @@ var _ = Namespace("tinabot", func() {
 		_, id, err := mg.Send(ctx, m)
 		log.Println("Sendmail ID", id)
 		return err
-	})
-
-	Desc("postmenu", "post the menu (if present). Usage: postmenu <channel> <pre msg>; <post msg>")
-	Add("postmenu", func(c *Context) error {
-		if len(c.Args) < 1 {
-			log.Println("No channel specified!")
-			return nil
-		}
-		channel := c.Args[0]
-
-		msg := ""
-		if len(c.Args) > 1 {
-			msg = strings.Join(c.Args[1:], " ")
-		}
-
-		redisURL := os.Getenv("REDIS_URL")
-		if redisURL == "" {
-			log.Fatalln("No redis URL found!")
-		}
-
-		brain := brain.New(redisURL)
-		defer brain.Close()
-
-		var menu tuttobene.Menu
-		err := brain.Get("menu", &menu)
-		if err == redis.Nil {
-			log.Println("No menu found")
-			return nil
-		}
-
-		if !menu.IsUpdated() {
-			log.Println("Found menu for " + menu.Date.Format("02/01/2006") + ", skipping menu posting")
-			return nil
-		}
-
-		token := os.Getenv("SLACK_BOT_TOKEN")
-		if token == "" {
-			log.Fatalln("No slackbot token found!")
-			return nil
-		}
-		var pre, post string
-		l := strings.SplitN(msg, ";", 2)
-		if len(l) > 0 {
-			pre = l[0] + "\n"
-		}
-		if len(l) > 1 {
-			post = "\n-----------\n" + l[1]
-		}
-
-		api := slack.New(token)
-		api.PostMessage(channel, slack.MsgOptionText(pre+menu.String()+post, false))
-		return nil
 	})
 })
