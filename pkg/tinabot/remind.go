@@ -9,11 +9,6 @@ import (
 	"github.com/develersrl/lunches/pkg/slackbot"
 )
 
-type Remind struct {
-	ID   string
-	Mask int
-}
-
 func formatReminder(mask int) string {
 	weekNames := []string{
 		"domenica",
@@ -68,13 +63,13 @@ func (t *TinaBot) Remind(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.Us
 	}
 
 	if args[1] == "" {
-		var remind map[string]Remind
+		var remind map[string]int
 		err := t.brain.Get("remind", &remind)
 		if err == redis.Nil || len(remind) == 0 {
 			bot.Message(msg.Channel, "Non c'è nessun reminder impostato")
 		} else {
 			if val, ok := remind[user.Name]; ok {
-				bot.Message(msg.Channel, formatReminder(val.Mask))
+				bot.Message(msg.Channel, formatReminder(val))
 			} else {
 				bot.Message(msg.Channel, "Non c'è nessun reminder impostato")
 			}
@@ -102,12 +97,12 @@ func (t *TinaBot) Remind(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.Us
 			return
 		}
 
-		remind := make(map[string]Remind)
+		remind := make(map[string]int)
 		t.brain.Get("remind", &remind)
 		if mask == 0 {
-			delete(remind, user.Name)
+			delete(remind, user.ID)
 		} else {
-			remind[user.Name] = Remind{user.ID, mask}
+			remind[user.ID] = mask
 		}
 		t.brain.Set("remind", remind)
 

@@ -231,7 +231,7 @@ var _ = Namespace("tinabot", func() {
 		brain := brain.New(redisURL)
 		defer brain.Close()
 
-		var remind map[string]tinabot.Remind
+		var remind map[string]int
 		err := brain.Get("remind", &remind)
 		if err == redis.Nil || len(remind) == 0 {
 			return nil
@@ -266,17 +266,23 @@ var _ = Namespace("tinabot", func() {
 		weekmask := 1 << uint(time.Now().In(loc).Weekday())
 
 		fmtmsg := "Ciao %s, scusa il disturbo. Vedo che non hai ancora ordinato il pranzo e mi hai chiesto di ricordartelo. Ecco il menù di oggi:\n" + menu.String()
-		for user, v := range remind {
-			if v.Mask&weekmask != 0 {
-				if _, ok := order.Users[user]; !ok {
-					log.Printf("Sending reminder to %s\n", user)
-					_, _, ch, err := api.OpenIMChannel(v.ID)
+		for userid, v := range remind {
+			if v&weekmask != 0 {
+				user, err := api.GetUserInfo(userid)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				if _, ok := order.Users[user.Name]; !ok {
+					log.Printf("Sending reminder to %s\n", user.Name)
+					_, _, ch, err := api.OpenIMChannel(user.ID)
 					if err != nil {
 						log.Println(err)
 						continue
 					}
 
-					txt := fmt.Sprintf(fmtmsg, user)
+					txt := fmt.Sprintf(fmtmsg, user.Name)
 					api.PostMessage(ch, slack.MsgOptionText(txt, false))
 				}
 			}
