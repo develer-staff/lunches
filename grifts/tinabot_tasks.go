@@ -2,6 +2,7 @@ package grifts
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -218,5 +219,69 @@ var _ = Namespace("tinabot", func() {
 		_, id, err := mg.Send(ctx, m)
 		log.Println("Sendmail ID", id)
 		return err
+	})
+
+	Desc("reminder", "send the users the reminder to order")
+	Add("reminder", func(c *Context) error {
+		redisURL := os.Getenv("REDIS_URL")
+		if redisURL == "" {
+			log.Fatalln("No redis URL found!")
+		}
+
+		brain := brain.New(redisURL)
+		defer brain.Close()
+
+		var remind map[string]tinabot.Remind
+		err := brain.Get("remind", &remind)
+		if err == redis.Nil || len(remind) == 0 {
+			return nil
+		}
+
+		var order tinabot.Order
+		order.Load(brain)
+
+		var menu tuttobene.Menu
+		err = brain.Get("menu", &menu)
+		if err == redis.Nil {
+			log.Println("No menu found")
+			return nil
+		}
+
+		if !menu.IsUpdated() || !order.IsUpdated() {
+			return nil
+		}
+
+		token := os.Getenv("SLACK_BOT_TOKEN")
+		if token == "" {
+			log.Fatalln("No slackbot token found!")
+		}
+		api := slack.New(token)
+
+		loc, err := time.LoadLocation("Europe/Rome")
+		if err != nil {
+			log.Println("LoadLocation error: ", err)
+			return nil
+		}
+
+		weekmask := 1 << uint(time.Now().In(loc).Weekday())
+
+		fmtmsg := "Ciao %s, scusa il disturbo. Vedo che non hai ancora ordinato il pranzo e mi hai chiesto di ricordartelo. Ecco il menù di oggi:\n" + menu.String()
+		for user, v := range remind {
+			if v.Mask&weekmask != 0 {
+				if _, ok := order.Users[user]; !ok {
+					log.Printf("Sending reminder to %s\n", user)
+					_, _, ch, err := api.OpenIMChannel(v.ID)
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+
+					txt := fmt.Sprintf(fmtmsg, user)
+					api.PostMessage(ch, slack.MsgOptionText(txt, false))
+				}
+			}
+		}
+
+		return nil
 	})
 })
