@@ -62,4 +62,32 @@ Verrà fornito un link che autocompone una mail nel client di posta locale. Chiu
 *PER IMPOSTARE IL MENÙ DEI PIATTI:*
 ‘@Tinabot 9000 setmenu <stringa menu>‘
 *<stringa menu>* può essere multilinea. E' sufficiente copiare le celle dal file excel inviato per mail dal tuttobene. Chiunque può impostare il menù.
+
+*PER IMPOSTARE IL REMINDER:*
+Nel caso tu abbia attivato la funzionalità reminder, se è impostato un menù valido per il giorno e non hai ancora ordinato, alle 11:50 ti verrà inviato un messaggio privato contenente il menù del giorno.
+Ecco come fare:
+‘@Tinabot 9000 remind <giorni>‘
+*<giorni>* può essere ‘on‘ per indicare tutti i giorni:
+‘‘‘
+@Tinabot 9000 remind on
+Tinabot 9000:
+Reminder attivo tutti i giorni
+‘‘‘
+
+E' anche possibile specificare i singoli giorni separati da virgola:
+‘‘‘
+@Tinabot 9000 remind lun, mar
+Tinabot 9000:
+Reminder attivo lunedì, martedì
+‘‘‘
+
+Per disattivare il reminder usare ‘off‘:
+‘‘‘
+@Tinabot 9000 remind off
+Tinabot 9000:
+Reminder disattivato
+‘‘‘
+
+*PER VEDERE LO STATO DEL REMINDER:*
+‘@Tinabot 9000 remind‘
 `
