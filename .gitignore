@@ -11,3 +11,4 @@ lunches
 .vscode/
 .grifter/
 .env
+env.sh

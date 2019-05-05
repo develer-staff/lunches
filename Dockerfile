@@ -18,6 +18,7 @@ RUN apk add --no-cache curl
 RUN apk add --no-cache curl
 RUN apk add --no-cache bash
 RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache tzdata
 
 WORKDIR /bin/
 
