@@ -147,55 +147,85 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 	}
 
 	var choice []UserChoice
-	reqs := splitEsc(dish, "+")
-
 	reply := ""
-	for _, req := range reqs {
-		dishes := splitEsc(req, "&amp;")
-		var currChoice UserChoice
-		for _, dish := range dishes {
-			dish = strings.TrimSpace(dish)
 
-			quoted := (dish[0] == '"' && dish[len(dish)-1] == '"')
-			dish = strings.Trim(dish, "\"")
-
-			found := findDishes(menu, dish)
-			nDish := len(found)
-
-			if quoted && nDish != 1 {
-				p := tuttobene.MenuRow{
-					Content:         dish,
-					Type:            tuttobene.Empty,
-					IsDailyProposal: false,
-				}
-				reply = reply + fmt.Sprintf("Aggiungo testualmente: '%s'\n", dish)
-				currChoice.Add(p)
-			} else if nDish == 0 {
-				t.bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menù che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
+	// handle the "copy" order command
+	if strings.HasPrefix(strings.ToLower(dish), "come") {
+		l := strings.Split(dish, " ")
+		if len(l) < 2 {
+			t.bot.Message(msg.Channel, fmt.Sprintf("E' necessario specificare da chi vuoi copiare l'ordine"))
+			return
+		}
+		name := l[1]
+		if strings.HasPrefix(name, "<@") {
+			user := getUserInfo(bot.Client, name)
+			if user == nil {
+				t.bot.Message(msg.Channel, fmt.Sprintf("Mi spiace, ma non riesco a trovare l'utente %s", name))
 				return
-			} else if nDish > 1 {
-				var matches []string
-				for _, d := range found {
-					matches = append(matches, d.Content)
-				}
+			}
+			name = user.Name
+		}
+		order := getOrder(t.brain)
+		if newchoice, ok := order.Users[name]; ok {
+			reply = reply + fmt.Sprintf("Ok, copio l'ordine di %s:\n", name)
+			for _, c := range newchoice {
+				reply = reply + c.String() + "\n"
+			}
+			choice = newchoice
+		} else {
+			t.bot.Message(msg.Channel, fmt.Sprintf("Mi spiace, ma non trovo l'utente '%s' nell'ordine", name))
+			return
+		}
+	} else {
+		reqs := splitEsc(dish, "+")
 
-				t.bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+strings.Join(matches, "\n")+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
-				return
-			} else { // nDish == 1
-				d := found[0]
-				reply = reply + "Trovato: " + d.Content + fmt.Sprintf(" (%s)\n", tuttobene.Titles[d.Type])
+		for _, req := range reqs {
+			dishes := splitEsc(req, "&amp;")
+			var currChoice UserChoice
+			for _, dish := range dishes {
+				dish = strings.TrimSpace(dish)
 
-				err := currChoice.Add(d)
-				if err != nil {
-					t.bot.Message(msg.Channel, reply+"Errore nella personalizzazione: "+err.Error()+"\nOrdine non aggiunto!")
+				quoted := (dish[0] == '"' && dish[len(dish)-1] == '"')
+				dish = strings.Trim(dish, "\"")
+
+				found := findDishes(menu, dish)
+				nDish := len(found)
+
+				if quoted && nDish != 1 {
+					p := tuttobene.MenuRow{
+						Content:         dish,
+						Type:            tuttobene.Empty,
+						IsDailyProposal: false,
+					}
+					reply = reply + fmt.Sprintf("Aggiungo testualmente: '%s'\n", dish)
+					currChoice.Add(p)
+				} else if nDish == 0 {
+					t.bot.Message(msg.Channel, reply+"Non ho trovato nulla nel menù che corrisponda a '"+dish+"'\nOrdine non aggiunto!")
 					return
+				} else if nDish > 1 {
+					var matches []string
+					for _, d := range found {
+						matches = append(matches, d.Content)
+					}
+
+					t.bot.Message(msg.Channel, reply+"Cercando per '"+dish+"' ho trovato i seguenti piatti:\n"+strings.Join(matches, "\n")+"\n----\nOrdine non aggiunto, prova ad essere più preciso!")
+					return
+				} else { // nDish == 1
+					d := found[0]
+					reply = reply + "Trovato: " + d.Content + fmt.Sprintf(" (%s)\n", tuttobene.Titles[d.Type])
+
+					err := currChoice.Add(d)
+					if err != nil {
+						t.bot.Message(msg.Channel, reply+"Errore nella personalizzazione: "+err.Error()+"\nOrdine non aggiunto!")
+						return
+					}
 				}
 			}
+			if currChoice.Customized() {
+				reply = reply + "Piatto personalizzato: " + currChoice.String() + "\n"
+			}
+			choice = append(choice, currChoice)
 		}
-		if currChoice.Customized() {
-			reply = reply + "Piatto personalizzato: " + currChoice.String() + "\n"
-		}
-		choice = append(choice, currChoice)
 	}
 
 	order := getOrder(t.brain)
