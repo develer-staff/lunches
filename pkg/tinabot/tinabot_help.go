@@ -9,7 +9,7 @@ const HelpStr = `Elenco comandi supportati da tinabot9000:
 
 *<ordine>* può essere una serie di stringhe separate da spazi, tinabot9000 cercherà di fare un il meglio che può per capire il piatto tra le voci presenti nel menù.
 
-*E' possibile usare i seguenti caratteri speciali per personalizzare l'ordine:*
+*E' possibile usare le seguenti funzionalità speciali per personalizzare l'ordine:*
 *&* - E commerciale
 Se usato per unire due o più stringhe, permette di personalizzare il secondo, aggiungendo uno o più contorni. Il piatto creato sarà indicato come *un* solo secondo.
 es.
@@ -43,6 +43,18 @@ Tinabot 9000:
 Aggiungo testualmente: 'pasta senza glutine al ragù'
 Ok, aggiunto 1 piatto per batt
 ‘‘‘
+
+*come* - Copia ordine
+Indicando "per me come <utente>", tinabot9000 copierà l'ordine dell'utente indicato
+‘‘‘
+@Tinabot 9000 per me come djeasy
+
+Tinabot 9000:
+Ok, copio l'ordine di djeasy:
+Baccalà alla livornese con ceci
+Ok, aggiunto 1 piatto per batt
+‘‘‘
+
 Le funzionalità speciali possono anche essere combinate tra loro
 
 *PER CANCELLARE UN ORDINE:*
