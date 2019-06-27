@@ -274,7 +274,7 @@ var _ = Namespace("tinabot", func() {
 					continue
 				}
 
-				if _, ok := order.Users[user.Name]; !ok {
+				if _, ok := order.Users[tinabot.User{Name: user.Name, ID: user.ID}]; !ok {
 					log.Printf("Sending reminder to %s\n", user.Name)
 					_, _, ch, err := api.OpenIMChannel(user.ID)
 					if err != nil {

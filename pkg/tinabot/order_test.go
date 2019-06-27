@@ -31,18 +31,18 @@ func TestOrder(t *testing.T) {
 	uc3.Add(s2)
 	uclist := []UserChoice{uc1, uc2}
 	uclist2 := []UserChoice{uc3}
-	order.Set("test", uclist)
+	order.Set(User{"test", "123"}, uclist)
 	assertEqual(t, order.String(), "1 primo [test]\n1 secondo [test]", "")
 	assertEqual(t, order.Format(false), "1 primo\n1 secondo", "")
-	order.Set("test2", uclist)
+	order.Set(User{"test2", "456"}, uclist)
 	assertEqual(t, order.String(), "2 primo [test, test2]\n2 secondo [test, test2]", "")
-	order.Set("test3", uclist2)
+	order.Set(User{"test3", "789"}, uclist2)
 	assertEqual(t, order.String(), "2 primo [test, test2]\n2 secondo [test, test2]\n1 secondo2 [test3]", "")
 
-	o := order.ClearUser("test")
+	o := order.ClearUser(User{"test", "123"})
 	assertEqual(t, o, "primo\nsecondo", "")
 	assertEqual(t, order.String(), "1 primo [test2]\n1 secondo [test2]\n1 secondo2 [test3]", "")
-	o = order.ClearUser("test3")
+	o = order.ClearUser(User{"test3", "789"})
 	assertEqual(t, o, "secondo2", "")
 	assertEqual(t, order.String(), "1 primo [test2]\n1 secondo [test2]", "")
 	b := brain.NewBrainMock()
