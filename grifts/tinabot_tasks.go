@@ -290,4 +290,64 @@ var _ = Namespace("tinabot", func() {
 
 		return nil
 	})
+
+	Desc("mark", "mark the lunch on the spreadsheet")
+	Add("mark", func(c *Context) error {
+		redisURL := os.Getenv("REDIS_URL")
+		if redisURL == "" {
+			log.Fatalln("No redis URL found!")
+		}
+
+		brain := brain.New(redisURL)
+		defer brain.Close()
+
+		var order tinabot.Order
+		order.Load(brain)
+
+		if !order.IsUpdated() {
+			return nil
+		}
+
+		token := os.Getenv("SLACK_BOT_TOKEN")
+		if token == "" {
+			log.Fatalln("No slackbot token found!")
+		}
+		api := slack.New(token)
+
+		users, err := api.GetUsers()
+
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+
+		for _, user := range users {
+			for u, v := range order.Users {
+				if user.ID == u.ID {
+					mail := user.Profile.Email
+					if strings.Contains(mail, "develer") {
+						nick := strings.TrimSuffix(mail, "@develer.com")
+
+						if nick == "batt" {
+							_, _, ch, err := api.OpenIMChannel(user.ID)
+							if err != nil {
+								log.Println(err)
+								return nil
+							}
+
+							var choices []string
+							for _, c := range v {
+								choices = append(choices, c.String())
+							}
+
+							txt := fmt.Sprintf("Ciao %s, oggi hai ordinato:\n%s", user.Name, strings.Join(choices, "\n"))
+							api.PostMessage(ch, slack.MsgOptionText(txt, false))
+						}
+					}
+				}
+			}
+		}
+
+		return nil
+	})
 })
