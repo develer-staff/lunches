@@ -345,7 +345,7 @@ var _ = Namespace("tinabot", func() {
 							defer resp.Body.Close()
 
 							txt := fmt.Sprintf("Ciao %s, oggi hai ordinato:\n%s", user.Name, v.String())
-							txt = txt + fmt.Sprintf("\nHo segnato %s sul foglio dei pranzi.", v.Mark())
+							txt = txt + fmt.Sprintf("\n-------\nHo segnato `%s` sul foglio dei pranzi.", v.Mark())
 							api.PostMessage(ch, slack.MsgOptionText(txt, false))
 						}
 					}

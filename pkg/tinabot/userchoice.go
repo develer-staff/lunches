@@ -47,21 +47,28 @@ func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
 	return nil
 }
 
-func (u *UserChoice) Mark() string {
+const (
+	firstDish   = "1P"
+	secondDish  = "2D"
+	dessertDish = "3D"
+	noDish      = "0"
+)
+
+func (u *UserChoice) mark() string {
 	if u.DishMask&(1<<uint(tuttobene.Primo)) != 0 {
-		return "P"
+		return firstDish
 	} else if u.DishMask&(1<<uint(tuttobene.Secondo)) != 0 ||
 		u.DishMask&(1<<uint(tuttobene.Vegetariano)) != 0 {
-		return "S"
+		return secondDish
 	} else if u.DishMask&(1<<uint(tuttobene.Contorno)) != 0 ||
 		u.DishMask&(1<<uint(tuttobene.Panino)) != 0 ||
 		u.DishMask&(1<<uint(tuttobene.Frutta)) != 0 {
-		return "D"
+		return dessertDish
 	} else if u.DishMask != 0 {
-		return "S"
+		return secondDish //In case of custom choice, assume it's an S
 	}
 
-	return "Niente"
+	return noDish // nothing
 }
 
 func (u *UserChoice) sort() {
@@ -103,9 +110,18 @@ type UserChoiceArray []UserChoice
 func (u UserChoiceArray) Mark() string {
 	var marks []string
 	for _, c := range u {
-		marks = append(marks, c.Mark())
+		marks = append(marks, c.mark())
 	}
-	return strings.Join(marks, "")
+	sort.Strings(marks)
+	out := strings.Join(marks, "")
+	out = strings.Replace(out, noDish, "", -1)
+	out = strings.Replace(out, firstDish, "P", -1)
+	out = strings.Replace(out, secondDish, "S", -1)
+	out = strings.Replace(out, dessertDish, "D", -1)
+	if out != "" {
+		return out
+	}
+	return "Niente"
 }
 
 func (u UserChoiceArray) String() string {
