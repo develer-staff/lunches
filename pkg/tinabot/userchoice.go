@@ -47,6 +47,23 @@ func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
 	return nil
 }
 
+func (u *UserChoice) Mark() string {
+	if u.DishMask&(1<<uint(tuttobene.Primo)) != 0 {
+		return "P"
+	} else if u.DishMask&(1<<uint(tuttobene.Secondo)) != 0 ||
+		u.DishMask&(1<<uint(tuttobene.Vegetariano)) != 0 {
+		return "S"
+	} else if u.DishMask&(1<<uint(tuttobene.Contorno)) != 0 ||
+		u.DishMask&(1<<uint(tuttobene.Panino)) != 0 ||
+		u.DishMask&(1<<uint(tuttobene.Frutta)) != 0 {
+		return "D"
+	} else if u.DishMask != 0 {
+		return "S"
+	}
+
+	return "Niente"
+}
+
 func (u *UserChoice) sort() {
 	sort.Slice(u.Dishes, func(i, j int) bool {
 		si := fmt.Sprintf("%d%s", u.Dishes[i].Type, u.Dishes[i].Content)
@@ -79,4 +96,22 @@ func (u *UserChoice) String() string {
 // OrdString return a string with a prefix that can be used to sort the dishes by category (first courses, second courses, fruit, etc... )
 func (u *UserChoice) OrdString() string {
 	return fmt.Sprintf("%04d-%s", u.DishMask, u.String())
+}
+
+type UserChoiceArray []UserChoice
+
+func (u UserChoiceArray) Mark() string {
+	var marks []string
+	for _, c := range u {
+		marks = append(marks, c.Mark())
+	}
+	return strings.Join(marks, "")
+}
+
+func (u UserChoiceArray) String() string {
+	var choices []string
+	for _, c := range u {
+		choices = append(choices, c.String())
+	}
+	return strings.Join(choices, "\n")
 }

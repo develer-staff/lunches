@@ -43,8 +43,8 @@ func (u *User) UnmarshalText(text []byte) error {
 // Order is a structure holding Tinabot orders
 type Order struct {
 	Timestamp time.Time
-	Dishes    map[string][]User     //map dishes with users
-	Users     map[User][]UserChoice //map each user to his/her dishes
+	Dishes    map[string][]User        //map dishes with users
+	Users     map[User]UserChoiceArray //map each user to his/her dishes
 }
 
 // NewOrder returns a new empty order
@@ -58,7 +58,7 @@ func NewOrder() *Order {
 	return &Order{
 		Timestamp: time.Now().In(loc),
 		Dishes:    make(map[string][]User),
-		Users:     make(map[User][]UserChoice),
+		Users:     make(map[User]UserChoiceArray),
 	}
 }
 
