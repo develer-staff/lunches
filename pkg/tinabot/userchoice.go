@@ -55,14 +55,13 @@ const (
 )
 
 func (u *UserChoice) mark() string {
-	if u.DishMask&(1<<uint(tuttobene.Primo)) != 0 {
+	if u.DishMask&(1<<uint(tuttobene.Primo)|1<<uint(tuttobene.Panino)) != 0 {
 		return firstDish
-	} else if u.DishMask&(1<<uint(tuttobene.Secondo)) != 0 ||
-		u.DishMask&(1<<uint(tuttobene.Vegetariano)) != 0 {
+	} else if u.DishMask&(1<<uint(tuttobene.Secondo)|1<<uint(tuttobene.Vegetariano)) != 0 {
 		return secondDish
-	} else if u.DishMask&(1<<uint(tuttobene.Contorno)) != 0 ||
-		u.DishMask&(1<<uint(tuttobene.Panino)) != 0 ||
-		u.DishMask&(1<<uint(tuttobene.Frutta)) != 0 {
+	} else if u.DishMask&(1<<uint(tuttobene.Contorno)) != 0 {
+		return firstDish
+	} else if u.DishMask&(1<<uint(tuttobene.Frutta)) != 0 {
 		return dessertDish
 	} else if u.DishMask != 0 {
 		return secondDish //In case of custom choice, assume it's an S
