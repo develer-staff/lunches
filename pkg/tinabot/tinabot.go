@@ -150,6 +150,8 @@ func (t *TinaBot) AddCommands() {
 
 	t.bot.RespondTo("^(?i)remind(.*)$", t.Remind)
 
+	t.bot.RespondTo("^(?i)segna(.*)$", t.Mark)
+
 	t.bot.RespondTo("^(?i)rmorder (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		u := args[1]
 		name := User{u, ""}
