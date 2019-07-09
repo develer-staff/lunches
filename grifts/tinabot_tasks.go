@@ -335,9 +335,9 @@ var _ = Namespace("tinabot", func() {
 
 						err = tinabot.MarkUser(&user, v.Mark())
 						if err != nil {
-							txt = txt + fmt.Sprintf("Ho segnato `%s` sul foglio dei pranzi.\nSe non fosse corretto, usa il comando `segna` per modificarlo.", v.Mark())
-						} else {
 							txt = txt + fmt.Sprintf("C'è stato un errore nel segnare il pranzo: %s.", err.Error())
+						} else {
+							txt = txt + fmt.Sprintf("Ho segnato `%s` sul foglio dei pranzi.\nSe non fosse corretto, usa il comando `segna` per modificarlo.", v.Mark())
 						}
 
 						api.PostMessage(ch, slack.MsgOptionText(txt, false))
