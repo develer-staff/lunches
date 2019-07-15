@@ -104,6 +104,9 @@ Reminder disattivato
 ‘@Tinabot 9000 remind‘
 
 *PER SEGNARE IL PRANZO:*
+Tinabot 9000 è in grado di segnare *in automatico* il pranzo sul foglio google di riepilogo, usato dall'amministrazione per tenere traccia dei pasti e dei buoni.
+Se hai ordinato il pranzo con Tinabot, *verrà registrato in automatico alle 14:00*.
+E' comunque possibile modificare quanto segnato sul foglio manualmente:
 ‘@Tinabot 9000 segna <cibo>‘
 *<cibo>* può essere:
 ‘P‘, ‘PS‘, ‘PD‘, ‘S‘, ‘SD‘, ‘D‘, ‘PSD‘ oppure ‘Niente‘
@@ -115,5 +118,5 @@ Tinabot 9000:
 Ok, segnato 'P' per batt sul foglio dei pranzi
 ‘‘‘
 
-Se hai ordinato il pranzo con Tinabot, *verrà registrato in automatico alle 14:00*.
+
 `
