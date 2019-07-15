@@ -48,10 +48,10 @@ func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
 }
 
 const (
-	firstDish   = "1P"
-	secondDish  = "2D"
-	dessertDish = "3D"
 	noDish      = "0"
+	firstDish   = "1"
+	secondDish  = "2"
+	dessertDish = "3"
 )
 
 func (u *UserChoice) mark() string {
