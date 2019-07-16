@@ -320,11 +320,13 @@ var _ = Namespace("tinabot", func() {
 			log.Println(err)
 			return nil
 		}
-
+		log.Printf("Today we have %d users for lunch\n", len(order.Users))
 		for u, v := range order.Users {
 			found := false
+			log.Printf("Marking lunch for user %s - ID [%s]...\n", u.Name, u.ID)
 			for _, user := range users {
 				if user.ID == u.ID {
+					log.Printf("User %s found!\n", u.Name)
 					_, _, ch, err := api.OpenIMChannel(user.ID)
 					if err != nil {
 						log.Println(err)
@@ -346,10 +348,11 @@ var _ = Namespace("tinabot", func() {
 				}
 			}
 			if !found {
-				log.Printf("WARN:user [%s] - ID [%s] not found, lunch not marked.\n", u.Name, u.ID)
+				log.Printf("WARN:user %s - ID [%s] not found, lunch not marked.\n", u.Name, u.ID)
 			}
 		}
 
+		log.Printf("Marking lunch fineshed correctly\n")
 		return nil
 	})
 })
