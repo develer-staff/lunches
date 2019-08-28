@@ -323,7 +323,7 @@ var _ = Namespace("tinabot", func() {
 		log.Printf("Today we have %d users for lunch\n", len(order.Users))
 		for u, v := range order.Users {
 			found := false
-			log.Printf("Marking lunch for user %s - ID [%s]...\n", u.Name, u.ID)
+			log.Printf("Marking lunch for user %s - ID [%s]\n", u.Name, u.ID)
 			for _, user := range users {
 				if user.ID == u.ID {
 					log.Printf("User %s found!\n", u.Name)
@@ -332,13 +332,17 @@ var _ = Namespace("tinabot", func() {
 						log.Println(err)
 						break
 					}
+					log.Printf("Got channel ID [%s]\n", ch)
 
 					txt := fmt.Sprintf("Ciao %s, oggi hai ordinato:\n%s\n-------\n", user.Name, v.String())
 
+					log.Printf("Calling mark function for user %s...\n", u.Name)
 					err = tinabot.MarkUser(&user, v.Mark())
 					if err != nil {
+						log.Printf("ERROR marking user %s: %s\n", u.Name, err.Error())
 						txt = txt + fmt.Sprintf("C'è stato un errore nel segnare il pranzo: %s.", err.Error())
 					} else {
+						log.Printf("Marking user %s: %s\n", u.Name, v.Mark())
 						txt = txt + fmt.Sprintf("Ho segnato `%s` sul foglio dei pranzi.\nSe non fosse corretto, usa il comando `segna` per modificarlo.", v.Mark())
 					}
 
