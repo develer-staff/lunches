@@ -3,9 +3,11 @@ package tinabot
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/develersrl/lunches/pkg/slackbot"
 	"github.com/nlopes/slack"
@@ -19,9 +21,20 @@ func Mark(user, food string) error {
 	url := strings.Replace(markURL, "<USER>", user, -1)
 	url = strings.Replace(url, "<FOOD>", food, -1)
 
-	resp, err := http.Get(url)
-	if err == nil {
-		defer resp.Body.Close()
+	timeout := time.Duration(10 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	var err error
+	for i := 0; i < 3; i++ {
+		resp, err := client.Get(url)
+		if err == nil {
+			defer resp.Body.Close()
+			break
+		} else {
+			log.Printf("ERROR marking user %s: %s, retrying\n", user, err.Error())
+		}
 	}
 	return err
 }
