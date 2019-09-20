@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/juju/errors"
+	"github.com/sahilm/fuzzy"
 	"github.com/tealeg/xlsx"
 )
 
@@ -134,8 +135,13 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 		menuRows    Menu
 	)
 
-	for _, r := range rows {
-		content, rowType, isTitle, isDailyProposal := parseRow(standardizeSpaces(r))
+	menuTitles, err := getMenuTitles(rows)
+	if err != nil {
+		return nil, fmt.Errorf("while getting menu titles: %v", err)
+	}
+
+	for idx, r := range rows {
+		content, rowType, isTitle, isDailyProposal := parseRow(idx, standardizeSpaces(r), menuTitles)
 
 		if isTitle {
 			currentType = rowType
@@ -202,14 +208,15 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 	return &menuRows, nil
 }
 
-func parseRow(content string) (string, MenuRowType, bool, bool) {
+func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, MenuRowType, bool, bool) {
 	var isDailyProposal bool
 
 	if content == "" {
 		return content, Empty, false, false
 	}
 
-	isTitle, titleType := parseTitle(content)
+
+	titleType, isTitle := menuTitles[idx]
 	if isTitle {
 		return content, titleType, isTitle, isDailyProposal
 	}
@@ -250,4 +257,39 @@ func cleanTitleString(s string) string {
 
 func standardizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
+}
+
+// getMenuTitles returns a map of the row index for each of the sections found in the menu.
+// Fuzzy matching is used to find the titles and some basic validation is done:
+// - order: the titles are expected to be in the order in which the relative const enumeration is declared (see menu.go)
+// - duplicates: if a duplicate title is found, an error is returned
+//
+// Note: it is not expected for all secitons to always be present i.e. if a section is missing, no error is thrown.
+func getMenuTitles(rows []string) (map[int]MenuRowType, error) {
+	var (
+		menuTitlesRowIndexes = make(map[int]MenuRowType)
+		lastTitleType = Unknonwn
+		currentIndex int
+	)
+
+	for t, title := range Titles {
+		results := fuzzy.Find(title, rows)
+		if len(results) == 0 || results[0].Score < 0 {
+			continue
+		}
+
+		if t < lastTitleType {
+			return nil, errors.New(fmt.Sprintf("Unexpected title order (Found: %v after last: %v)", t, lastTitleType))
+		}
+
+		currentIndex = results[0].Index
+		if _, found := menuTitlesRowIndexes[currentIndex]; found {
+			return nil, errors.New(fmt.Sprintf("Unexptected title duplicate: %s", title))
+		}
+		
+		// First match is always the title of a section (menu items may contain the same text)
+		menuTitlesRowIndexes[results[0].Index] = t
+	}
+
+	return menuTitlesRowIndexes, nil
 }
