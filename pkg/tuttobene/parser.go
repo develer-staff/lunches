@@ -2,12 +2,9 @@ package tuttobene
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/juju/errors"
 	"github.com/sahilm/fuzzy"
@@ -21,22 +18,6 @@ var Titles = map[MenuRowType]string{
 	Vegetariano: "piatti vegetariani",
 	Frutta:      "frutta",
 	Panino:      "i nostri panini espressi",
-}
-
-// ParseMenuReaderAt takes io.ReaderAt of an XLSX file and returns a populated
-// menu struct.
-func ParseMenuReaderAt(r io.ReaderAt, size int64) (*Menu, error) {
-	f, err := xlsx.OpenReaderAt(r, size)
-	if err != nil {
-		return nil, errors.Annotate(err, "while opening readerAt")
-	}
-
-	if len(f.Sheet) == 0 {
-		return nil, errors.New("no sheets in file")
-	}
-
-	// Menu is expected to be on the first sheet
-	return ParseSheet(f.Sheets[0])
 }
 
 // ParseMenuBytes takes io.ReaderAt of an XLSX file and returns a populated
@@ -227,32 +208,6 @@ func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, 
 	}
 
 	return content, Unknonwn, isTitle, isDailyProposal
-}
-
-func parseTitle(content string) (bool, MenuRowType) {
-	content = cleanTitleString(standardizeSpaces(content))
-	for k, title := range Titles {
-		if strings.EqualFold(title, content) || strings.EqualFold(strings.Replace(title, " ", "", -1), content) {
-			return true, k
-		}
-	}
-
-	return false, Unknonwn
-}
-
-var titleDirt = []string{
-	"…",
-	".",
-	",",
-	";",
-}
-
-func cleanTitleString(s string) string {
-	for _, p := range titleDirt {
-		s = strings.Replace(s, p, "", -1)
-	}
-
-	return strings.ToLower(s)
 }
 
 func standardizeSpaces(s string) string {
