@@ -51,6 +51,10 @@ func (m *Menu) String() string {
 			out = out + "\n*" + strings.ToUpper(Titles[r.Type]) + "*\n"
 			menutype = r.Type
 		}
+		if r.IsDailyProposal {
+			out += "Proposta del giorno: "
+		}
+
 		out = out + r.Content + "\n"
 	}
 	return out
