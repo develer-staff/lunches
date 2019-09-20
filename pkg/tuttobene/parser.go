@@ -17,6 +17,7 @@ var Titles = map[MenuRowType]string{
 	Contorno:    "contorni",
 	Vegetariano: "piatti vegetariani",
 	Frutta:      "frutta",
+	Dolce:       "dolci",
 	Panino:      "i nostri panini espressi",
 }
 

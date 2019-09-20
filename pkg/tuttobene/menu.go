@@ -14,6 +14,7 @@ const (
 	Contorno
 	Vegetariano
 	Frutta
+	Dolce
 	Panino
 )
 
