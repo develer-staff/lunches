@@ -189,6 +189,11 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 	return &menuRows, nil
 }
 
+var dailyProposalPrefixes = []string{
+	"Proposta del giorno: ",
+	"Prop. del giorno: ",
+}
+
 func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, MenuRowType, bool, bool) {
 	var isDailyProposal bool
 
@@ -202,12 +207,23 @@ func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, 
 		return content, titleType, isTitle, isDailyProposal
 	}
 
-	if strings.HasPrefix(content, "Proposta del giorno: ") {
-		content = strings.TrimPrefix(content, "Proposta del giorno: ")
-		isDailyProposal = true
-	}
+	content, isDailyProposal = trimPrefixAny(content, dailyProposalPrefixes)
 
 	return content, Unknonwn, isTitle, isDailyProposal
+}
+
+// trimPrefixAny tries to trim each prefix string in the order they are defined and returns
+// the resulting strings and a bool value which is true if any of the prefixes was trimmed.
+func trimPrefixAny(s string, prefixes []string) (string, bool) {
+	var trimmed bool
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			s = strings.TrimPrefix(s, prefix)
+			trimmed = true
+		}
+	}
+
+	return s, trimmed
 }
 
 func standardizeSpaces(s string) string {
