@@ -99,14 +99,13 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 	dest := args[1]
 	dish := sanitize(args[2])
 
-	destUser := user
-	destName := user.Name
+	destUser := User{user.Name, user.ID}
 	destCh := ""
 
 	if strings.ToLower(dest) != "me" {
-		destUser = getUserInfo(t.bot.Client, dest)
-		if destUser != nil {
-			destName = destUser.Name
+		finduser := getUserInfo(t.bot.Client, dest)
+		if finduser != nil {
+			destUser = User{finduser.Name, finduser.ID}
 			_, _, ch, err := bot.Client.OpenIMChannel(destUser.ID)
 			if err != nil {
 				log.Println(err)
@@ -118,16 +117,16 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 				t.bot.Message(msg.Channel, fmt.Sprintf("Utente '%s' non trovato. Se vuoi ordinare per conto di un ospite usa il prefisso *guest_* nel nome", dest))
 				return
 			}
-			destName = dest
+			destUser = User{Name: dest, ID: ""}
 		}
 	}
 
 	if strings.ToLower(dish) == "niente" {
 		order := getOrder(t.brain)
-		old := order.ClearUser(destName)
+		old := order.ClearUser(destUser)
 		order.Save(t.brain)
 
-		t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine per %s:\n%s", destName, old))
+		t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine per %s:\n%s", destUser.Name, old))
 		if destCh != "" {
 			t.bot.Message(destCh, fmt.Sprintf("Mi spiace disturbarti, volevo informarti che <@%s> ha appena cancellato il tuo ordine:\n%s", user.ID, old))
 		}
@@ -156,24 +155,21 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 			t.bot.Message(msg.Channel, fmt.Sprintf("E' necessario specificare da chi vuoi copiare l'ordine"))
 			return
 		}
-		name := l[1]
-		if strings.HasPrefix(name, "<@") {
-			user := getUserInfo(bot.Client, name)
-			if user == nil {
-				t.bot.Message(msg.Channel, fmt.Sprintf("Mi spiace, ma non riesco a trovare l'utente %s", name))
-				return
-			}
-			name = user.Name
+		finduser := getUserInfo(t.bot.Client, l[1])
+		name := User{Name: l[1], ID: ""}
+		if finduser != nil {
+			name = User{finduser.Name, finduser.ID}
 		}
+
 		order := getOrder(t.brain)
 		if newchoice, ok := order.Users[name]; ok {
-			reply = reply + fmt.Sprintf("Ok, copio l'ordine di %s:\n", name)
+			reply = reply + fmt.Sprintf("Ok, copio l'ordine di %s:\n", name.Name)
 			for _, c := range newchoice {
 				reply = reply + c.String() + "\n"
 			}
 			choice = newchoice
 		} else {
-			t.bot.Message(msg.Channel, fmt.Sprintf("Mi spiace, ma non trovo l'utente '%s' nell'ordine", name))
+			t.bot.Message(msg.Channel, fmt.Sprintf("Mi spiace, ma non trovo l'utente '%s' nell'ordine", name.Name))
 			return
 		}
 	} else {
@@ -229,7 +225,7 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 	}
 
 	order := getOrder(t.brain)
-	list := order.Set(destName, choice)
+	list := order.Set(destUser, choice)
 	order.Save(t.brain)
 
 	l := len(choice)
@@ -237,7 +233,7 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 	if l > 1 {
 		c = "i"
 	}
-	t.bot.Message(msg.Channel, reply+fmt.Sprintf("Ok, aggiunt%s %d piatt%s per %s", c, l, c, destName))
+	t.bot.Message(msg.Channel, reply+fmt.Sprintf("Ok, aggiunt%s %d piatt%s per %s", c, l, c, destUser.Name))
 	if destCh != "" {
 		t.bot.Message(destCh, fmt.Sprintf("Ti volevo informare che <@%s> ha ordinato i seguenti piatti per conto tuo:\n%s", user.ID, strings.Join(list, "\n")))
 	}

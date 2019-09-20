@@ -1,6 +1,7 @@
 package tinabot
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -13,11 +14,37 @@ type DataStore interface {
 	Get(string, interface{}) error
 }
 
+// User data
+type User struct {
+	Name string
+	ID   string
+}
+
+func (u User) MarshalText() ([]byte, error) {
+	return []byte(u.Name + "&&&&" + u.ID), nil
+}
+
+func (u *User) UnmarshalText(text []byte) error {
+	js := string(text)
+
+	if js == "null" {
+		return nil
+	}
+
+	f := strings.Split(js, "&&&&")
+	if len(f) != 2 {
+		return errors.New("invalid User field")
+	}
+
+	*u = User{f[0], f[1]}
+	return nil
+}
+
 // Order is a structure holding Tinabot orders
 type Order struct {
 	Timestamp time.Time
-	Dishes    map[string][]string     //map dishes with users
-	Users     map[string][]UserChoice //map each user to his/her dishes
+	Dishes    map[string][]User        //map dishes with users
+	Users     map[User]UserChoiceArray //map each user to his/her dishes
 }
 
 // NewOrder returns a new empty order
@@ -30,13 +57,13 @@ func NewOrder() *Order {
 
 	return &Order{
 		Timestamp: time.Now().In(loc),
-		Dishes:    make(map[string][]string),
-		Users:     make(map[string][]UserChoice),
+		Dishes:    make(map[string][]User),
+		Users:     make(map[User]UserChoiceArray),
 	}
 }
 
 // ClearUser clear the user order, returns the cleared dishes, if any
-func (order *Order) ClearUser(user string) string {
+func (order *Order) ClearUser(user User) string {
 	var deleted []string
 
 	for _, d := range order.sorted() {
@@ -98,11 +125,12 @@ func (order *Order) Load(brain DataStore) error {
 
 // Save saves order to redis brain
 func (order *Order) Save(brain DataStore) error {
+	fmt.Println("save")
 	return brain.Set("order", *order)
 }
 
 // Set set the current order for user to her choice, returns a string array of what she ordered
-func (order *Order) Set(user string, choice []UserChoice) []string {
+func (order *Order) Set(user User, choice []UserChoice) []string {
 	order.ClearUser(user)
 	var list []string
 	for _, c := range choice {
@@ -124,7 +152,12 @@ func (order *Order) Format(withUserNames bool) string {
 	for _, d := range order.sorted() {
 		l := fmt.Sprintf("%d %s", len(order.Dishes[d]), d)
 		if withUserNames {
-			l += " [" + strings.Join(order.Dishes[d], ", ") + "]"
+			//gather names
+			var names []string
+			for _, u := range order.Dishes[d] {
+				names = append(names, u.Name)
+			}
+			l += " [" + strings.Join(names, ", ") + "]"
 		}
 		r = append(r, l)
 	}

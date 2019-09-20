@@ -21,7 +21,7 @@ func TestSplitSep(t *testing.T) {
 	}
 
 	for i := range tests {
-		out := SplitEsc(i, "&")
+		out := splitEsc(i, "&")
 		for j := range out {
 			if out[j] != tests[i][j] {
 				t.Fatalf("Error, wanted %v, got %v", tests[i], out)

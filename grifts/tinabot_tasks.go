@@ -274,7 +274,7 @@ var _ = Namespace("tinabot", func() {
 					continue
 				}
 
-				if _, ok := order.Users[user.Name]; !ok {
+				if _, ok := order.Users[tinabot.User{Name: user.Name, ID: user.ID}]; !ok {
 					log.Printf("Sending reminder to %s\n", user.Name)
 					_, _, ch, err := api.OpenIMChannel(user.ID)
 					if err != nil {
@@ -288,6 +288,75 @@ var _ = Namespace("tinabot", func() {
 			}
 		}
 
+		return nil
+	})
+
+	Desc("mark", "mark the lunch on the spreadsheet")
+	Add("mark", func(c *Context) error {
+		redisURL := os.Getenv("REDIS_URL")
+		if redisURL == "" {
+			log.Fatalln("No redis URL found!")
+		}
+
+		brain := brain.New(redisURL)
+		defer brain.Close()
+
+		var order tinabot.Order
+		order.Load(brain)
+
+		if !order.IsUpdated() {
+			return nil
+		}
+
+		token := os.Getenv("SLACK_BOT_TOKEN")
+		if token == "" {
+			log.Fatalln("No slackbot token found!")
+		}
+		api := slack.New(token)
+
+		users, err := api.GetUsers()
+
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		log.Printf("Today we have %d users for lunch\n", len(order.Users))
+		for u, v := range order.Users {
+			found := false
+			log.Printf("Marking lunch for user %s - ID [%s]\n", u.Name, u.ID)
+			for _, user := range users {
+				if user.ID == u.ID {
+					log.Printf("User %s found!\n", u.Name)
+					_, _, ch, err := api.OpenIMChannel(user.ID)
+					if err != nil {
+						log.Println(err)
+						break
+					}
+					log.Printf("Got channel ID [%s]\n", ch)
+
+					txt := fmt.Sprintf("Ciao %s, oggi hai ordinato:\n%s\n-------\n", user.Name, v.String())
+
+					log.Printf("Calling mark function for user %s...\n", u.Name)
+					err = tinabot.MarkUser(&user, v.Mark())
+					if err != nil {
+						log.Printf("ERROR marking user %s: %s\n", u.Name, err.Error())
+						txt = txt + fmt.Sprintf("C'è stato un errore nel segnare il pranzo: %s.", err.Error())
+					} else {
+						log.Printf("Marking user %s: %s\n", u.Name, v.Mark())
+						txt = txt + fmt.Sprintf("Ho segnato `%s` sul foglio dei pranzi.\nSe non fosse corretto, usa il comando `segna` per modificarlo.", v.Mark())
+					}
+
+					api.PostMessage(ch, slack.MsgOptionText(txt, false))
+					found = true
+					break
+				}
+			}
+			if !found {
+				log.Printf("WARN:user %s - ID [%s] not found, lunch not marked.\n", u.Name, u.ID)
+			}
+		}
+
+		log.Printf("Marking lunch fineshed correctly\n")
 		return nil
 	})
 })

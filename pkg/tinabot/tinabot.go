@@ -150,12 +150,23 @@ func (t *TinaBot) AddCommands() {
 
 	t.bot.RespondTo("^(?i)remind(.*)$", t.Remind)
 
+	t.bot.RespondTo("^(?i)segna(.*)$", t.Mark)
+
 	t.bot.RespondTo("^(?i)rmorder (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		u := args[1]
-
+		name := User{u, ""}
+		finduser := getUserInfo(b.Client, u)
+		if finduser != nil {
+			name = User{finduser.Name, finduser.ID}
+		}
 		order := getOrder(t.brain)
-		old := order.ClearUser(u)
-		t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine di %s:\n%s", u, old))
+		old := order.ClearUser(name)
+		if old != "" {
+			t.bot.Message(msg.Channel, fmt.Sprintf("Ok, cancello ordine di %s:\n%s", name.Name, old))
+		} else {
+			t.bot.Message(msg.Channel, fmt.Sprintf("%s non aveva ordinato nulla", name.Name))
+		}
+
 		order.Save(t.brain)
 	})
 }
