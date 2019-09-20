@@ -238,6 +238,72 @@ func TestParseMenu(t *testing.T) {
 			nil,
 			true,
 		},
+		{
+			"Test new format",
+			args{filepath.Join("test-fixtures", "testmenuv3.xlsx")},
+			2019,
+			&Menu{
+
+				[]MenuRow{
+					{"Fusilli con ricotta rucola e pinoli (freddo) + macedonia",Primo, true},
+					{"Couscous con tonno pomodori e olive(freddo)", Primo, false},
+					{"Fusilli con ricotta rucola e pinoli (freddo)", Primo, false},
+					{"Sedani all'amatriciana", Primo, false},
+					{"Paella catalana", Primo, false},
+					{"Paccheri alla Carloforte", Primo, false},
+					{"Pasta olio", Primo, false},
+					{"Pasta al pesto", Primo, false},
+					{"Pasta al ragù", Primo, false},
+					{"Pasta al pomodoro", Primo, false},
+					{"Riso olio", Primo, false},
+
+					{"Roastbeef con contorno a piacere + macedonia", Secondo, true},
+					{"Insalata con mozzarella, tonno, pomodori (o scegli tu fra: uovo sodo, mais, semi vari)", Secondo, false},
+					{"Cosciotto di maiale del Mugello", Secondo, false},
+					{"Roastbeef", Secondo, false},
+					{"Tasca di tacchinoalla ligure", Secondo, false},
+					{"polpo con piselli e olive", Secondo, false},
+					{"Baccalà alla livornese", Secondo, false},
+
+					{"Peperoni alla griglia", Contorno, false},
+					{"Melanzane alla griglia", Contorno, false},
+					{"Belga alla griglia", Contorno, false},
+					{"Finocchi alla griglia", Contorno, false},
+					{"Radicchio alla griglia", Contorno, false},
+					{"Broccoli al vapore", Contorno, false},
+					{"Cavolfiore al vapore", Contorno, false},
+					{"Carote al vapore", Contorno, false},
+					{"Fagiolini al vapore", Contorno, false},
+					{"Pomodori", Contorno, false},
+					{"Insalata mista", Contorno, false},
+					{"Taccole con pomodorini", Contorno, false},
+					{"Dadolata di verdure al forno", Contorno, false},
+					{"Patate arrosto", Contorno, false},
+					{"Spinaci saltati", Contorno, false},
+					{"Ceci", Contorno, false},
+					{"Spinaci con patate", Contorno, false},
+
+					{"Insalata greca", Vegetariano, false},
+					{"Verdure al vapore", Vegetariano, false},
+
+					{"Macedonia di frutta fresca", Frutta, false},
+					{"Macedonia di frutta fresca piccola", Frutta, false},
+					{"Frutta a tocchi", Frutta, false},
+
+					{"Schiacciata con l'uva", Dolce, false},
+					{"Shiacciata con i fichi", Dolce, false},
+
+					{"Diametro 12 mortadella", Panino, false},
+					{"Diametro 12 crudo pecorino e rucola", Panino, false},
+					{"Diametro 8 bresaola rucola e brie", Panino, false},
+					{"Diametro 8 vegetariano", Panino, false},
+					{"Tubo 15 tonno maionese e pomodoro", Panino, false},
+					{"Tubo 15 praga radicchi e grana", Panino, false},
+				},
+				time.Date(2019, 9, 20, 0, 0, 0, 0, loc),
+			},
+			false,
+		},
 	}
 
 	for _, tt := range tests {
