@@ -202,7 +202,6 @@ func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, 
 		return content, Empty, false, false
 	}
 
-
 	titleType, isTitle := menuTitles[idx]
 	if isTitle {
 		return content, titleType, isTitle, isDailyProposal
@@ -240,8 +239,8 @@ func standardizeSpaces(s string) string {
 func getMenuTitles(rows []string) (map[int]MenuRowType, error) {
 	var (
 		menuTitlesRowIndexes = make(map[int]MenuRowType)
-		lastTitleType = Unknonwn
-		currentIndex int
+		lastTitleType        = Unknonwn
+		currentIndex         int
 	)
 
 	for t, title := range Titles {
@@ -258,7 +257,7 @@ func getMenuTitles(rows []string) (map[int]MenuRowType, error) {
 		if _, found := menuTitlesRowIndexes[currentIndex]; found {
 			return nil, errors.New(fmt.Sprintf("Unexptected title duplicate: %s", title))
 		}
-		
+
 		// First match is always the title of a section (menu items may contain the same text)
 		menuTitlesRowIndexes[results[0].Index] = t
 	}
