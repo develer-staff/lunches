@@ -12,3 +12,4 @@ lunches
 .grifter/
 .env
 env.sh
+.DS_Store
