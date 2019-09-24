@@ -61,6 +61,10 @@ func TestUserChoice(t *testing.T) {
 		Content: "frutta",
 		Type:    tuttobene.Frutta,
 	}
+	d := tuttobene.MenuRow{
+		Content: "dolce",
+		Type: tuttobene.Dolce,
+	}
 
 	e := choice.Add(p)
 	assertEqual(t, e, nil, "")
@@ -73,6 +77,9 @@ func TestUserChoice(t *testing.T) {
 
 	e = choice.Add(f)
 	assertNotEqual(t, e, nil, "Non si può comporre un primo con una frutta")
+
+	e = choice.Add(d)
+	assertNotEqual(t, e, nil, "Non si può comporre un primo con un dolce")
 
 	e = choice.Add(pa)
 	assertNotEqual(t, e, nil, "Non si può comporre un primo con un panino")
