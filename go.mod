@@ -22,6 +22,8 @@ require (
 	github.com/markbates/inflect v1.0.4
 	github.com/nlopes/slack v0.5.0
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
+	github.com/sahilm/fuzzy v0.1.0
+	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
 	github.com/tealeg/xlsx v1.0.3
 	github.com/unrolled/secure v1.0.0
 )

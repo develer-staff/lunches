@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type DataStore interface {
@@ -143,12 +145,19 @@ func (order *Order) Set(user User, choice []UserChoice) []string {
 }
 
 func (order *Order) String() string {
-	return order.Format(true)
+	return order.Format(true, false)
+}
+
+func (order *Order) Bill() string {
+	return order.Format(true, true)
 }
 
 // Format convert the order to a string, with or without the user names
-func (order *Order) Format(withUserNames bool) string {
+func (order *Order) Format(withUserNames, withPrices bool) string {
 	var r []string
+	var noPrice []string
+	total := decimal.Zero
+
 	for _, d := range order.sorted() {
 		l := fmt.Sprintf("%d %s", len(order.Dishes[d]), d)
 		if withUserNames {
@@ -159,7 +168,39 @@ func (order *Order) Format(withUserNames bool) string {
 			}
 			l += " [" + strings.Join(names, ", ") + "]"
 		}
+
+		if withPrices {
+			cnt := len(order.Dishes[d])
+			mul := decimal.New(int64(cnt), 0)
+			priceFound := false
+
+			u := order.Dishes[d][0]
+			for _, dish := range order.Users[u] {
+				if dish.String() == d {
+					row := dish.Price().Mul(mul)
+					total = total.Add(row)
+					if !row.IsZero() {
+						l += " -> €" + row.String()
+						priceFound = true
+						break
+					}
+				}
+			}
+
+			if !priceFound {
+				l += " -> *prezzo non disponibile!*"
+				noPrice = append(noPrice, d)
+			}
+		}
 		r = append(r, l)
+	}
+
+	if withPrices {
+		r = append(r, fmt.Sprintf("*Prezzo TOTALE: €%s*", total.String()))
+		if len(noPrice) > 0 {
+			r = append(r, "I seguenti piatti non hanno un prezzo indicato:")
+			r = append(r, noPrice...)
+		}
 	}
 
 	return strings.Join(r, "\n")

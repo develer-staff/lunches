@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/develersrl/lunches/pkg/tuttobene"
 )
 
@@ -21,7 +23,7 @@ func (u *UserChoice) Clear() {
 	u.Dishes = nil
 }
 
-// Customized returns true is the user choosed to customize her dish adding one or more side dishes
+// Customized returns true if the user choosed to customize her dish adding one or more side dishes
 func (u *UserChoice) Customized() bool {
 	return len(u.Dishes) > 1
 }
@@ -36,7 +38,7 @@ func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
 		tuttobene.Vegetariano: 1<<uint(tuttobene.Secondo) | 1<<uint(tuttobene.Contorno) | 1<<uint(tuttobene.Vegetariano),
 		tuttobene.Frutta:      0,
 		tuttobene.Panino:      0,
-		tuttobene.Dolce: 		0,
+		tuttobene.Dolce:       0,
 	}
 
 	if u.DishMask&^allowedMask[dish.Type] != 0 {
@@ -103,6 +105,16 @@ func (u *UserChoice) String() string {
 // OrdString return a string with a prefix that can be used to sort the dishes by category (first courses, second courses, fruit, etc... )
 func (u *UserChoice) OrdString() string {
 	return fmt.Sprintf("%04d-%s", u.DishMask, u.String())
+}
+
+func (u *UserChoice) Price() decimal.Decimal {
+	p := decimal.Zero
+
+	for _, d := range u.Dishes {
+		p = decimal.Max(p, d.Price)
+	}
+
+	return p
 }
 
 type UserChoiceArray []UserChoice

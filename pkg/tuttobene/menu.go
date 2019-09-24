@@ -4,6 +4,8 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -24,6 +26,7 @@ type MenuRow struct {
 	Content         string
 	Type            MenuRowType
 	IsDailyProposal bool
+	Price           decimal.Decimal
 }
 
 type Menu struct {

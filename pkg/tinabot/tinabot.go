@@ -62,6 +62,11 @@ func (t *TinaBot) AddCommands() {
 		t.bot.Message(msg.Channel, "Ecco l'ordine:\n"+order.String())
 	})
 
+	t.bot.RespondTo("^(?i)conto$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+		order := getOrder(t.brain)
+		t.bot.Message(msg.Channel, "Ecco il conto:\n"+order.Bill())
+	})
+
 	t.bot.RespondTo("^(?i)cancella ordine$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		order := NewOrder()
 		order.Save(t.brain)
@@ -71,7 +76,7 @@ func (t *TinaBot) AddCommands() {
 	t.bot.RespondTo("^(?i)email$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		order := getOrder(t.brain)
 		subj := "Ordine Develer del giorno " + order.Timestamp.Format("02/01/2006")
-		body := order.Format(false)
+		body := order.Format(false, false)
 
 		out := subj + "\n" + body + "\n\n" +
 			"<mailto:info@tuttobene-bar.it,sara@tuttobene-bar.it" +

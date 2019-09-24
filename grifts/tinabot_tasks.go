@@ -148,8 +148,10 @@ var _ = Namespace("tinabot", func() {
 
 		msg := strings.Join(c.Args[startMsg:], " ")
 		msg = strings.Replace(msg, "$MENU", menu.String(), -1)
-		msg = strings.Replace(msg, "$ORDER_NONAMES", order.Format(false), -1)
-		msg = strings.Replace(msg, "$ORDER", order.Format(true), -1)
+		msg = strings.Replace(msg, "$ORDER_NONAMES", order.Format(false, false), -1)
+		msg = strings.Replace(msg, "$ORDER", order.Format(true, false), -1)
+		msg = strings.Replace(msg, "$BILL", order.Format(true, true), -1)
+		msg = strings.Replace(msg, "$BILL_NONAMES", order.Format(false, true), -1)
 		msg = strings.Replace(msg, "\\n", "\n", -1)
 
 		api := slack.New(token)
@@ -168,11 +170,6 @@ var _ = Namespace("tinabot", func() {
 		apiKey := os.Getenv("MAILGUN_API_KEY")
 		if apiKey == "" {
 			log.Println("MAILGUN_API_KEY not set")
-			return nil
-		}
-
-		if len(c.Args) < 1 {
-			log.Println("No recipients found!")
 			return nil
 		}
 
@@ -199,18 +196,34 @@ var _ = Namespace("tinabot", func() {
 
 		mg := mailgun.NewMailgun(domain, apiKey)
 		var addresses []string
+		sendBill := false
+		sendNames := false
+
 		for _, a := range c.Args {
-			if strings.HasPrefix(a, "<mailto:") {
-				a = strings.TrimPrefix(a, "<mailto:")
-				a = strings.Split(a, "|")[0]
+			switch a {
+			case "--bill":
+				sendBill = true
+			case "--names":
+				sendNames = true
+			default:
+				if strings.HasPrefix(a, "<mailto:") {
+					a = strings.TrimPrefix(a, "<mailto:")
+					a = strings.Split(a, "|")[0]
+				}
+				addresses = append(addresses, a)
 			}
-			addresses = append(addresses, a)
 		}
+
+		if len(addresses) < 1 {
+			log.Println("No recipients found!")
+			return nil
+		}
+
 		to := strings.Join(addresses, ",")
 
 		subj := "Ordine Develer del giorno " + order.Timestamp.Format("02/01/2006")
 		from := "cibo@develer.com"
-		body := order.Format(false)
+		body := order.Format(sendNames, sendBill)
 		m := mg.NewMessage(from, subj, body, to)
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
