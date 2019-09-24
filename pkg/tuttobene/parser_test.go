@@ -238,6 +238,72 @@ func TestParseMenu(t *testing.T) {
 			nil,
 			true,
 		},
+		{
+			"Test new format",
+			args{filepath.Join("test-fixtures", "testmenuv3.xlsx")},
+			2019,
+			&Menu{
+
+				[]MenuRow{
+					{"Fusilli con ricotta rucola e pinoli (freddo) + macedonia",Primo, true},
+					{"Couscous con tonno pomodori e olive(freddo)", Primo, false},
+					{"Fusilli con ricotta rucola e pinoli (freddo)", Primo, false},
+					{"Sedani all'amatriciana", Primo, false},
+					{"Paella catalana", Primo, false},
+					{"Paccheri alla Carloforte", Primo, false},
+					{"Pasta olio", Primo, false},
+					{"Pasta al pesto", Primo, false},
+					{"Pasta al ragù", Primo, false},
+					{"Pasta al pomodoro", Primo, false},
+					{"Riso olio", Primo, false},
+
+					{"Roastbeef con contorno a piacere + macedonia", Secondo, true},
+					{"Insalata con mozzarella, tonno, pomodori (o scegli tu fra: uovo sodo, mais, semi vari)", Secondo, false},
+					{"Cosciotto di maiale del Mugello", Secondo, false},
+					{"Roastbeef", Secondo, false},
+					{"Tasca di tacchinoalla ligure", Secondo, false},
+					{"polpo con piselli e olive", Secondo, false},
+					{"Baccalà alla livornese", Secondo, false},
+
+					{"Peperoni alla griglia", Contorno, false},
+					{"Melanzane alla griglia", Contorno, false},
+					{"Belga alla griglia", Contorno, false},
+					{"Finocchi alla griglia", Contorno, false},
+					{"Radicchio alla griglia", Contorno, false},
+					{"Broccoli al vapore", Contorno, false},
+					{"Cavolfiore al vapore", Contorno, false},
+					{"Carote al vapore", Contorno, false},
+					{"Fagiolini al vapore", Contorno, false},
+					{"Pomodori", Contorno, false},
+					{"Insalata mista", Contorno, false},
+					{"Taccole con pomodorini", Contorno, false},
+					{"Dadolata di verdure al forno", Contorno, false},
+					{"Patate arrosto", Contorno, false},
+					{"Spinaci saltati", Contorno, false},
+					{"Ceci", Contorno, false},
+					{"Spinaci con patate", Contorno, false},
+
+					{"Insalata greca", Vegetariano, false},
+					{"Verdure al vapore", Vegetariano, false},
+
+					{"Macedonia di frutta fresca", Frutta, false},
+					{"Macedonia di frutta fresca piccola", Frutta, false},
+					{"Frutta a tocchi", Frutta, false},
+
+					{"Schiacciata con l'uva", Dolce, false},
+					{"Shiacciata con i fichi", Dolce, false},
+
+					{"Diametro 12 mortadella", Panino, false},
+					{"Diametro 12 crudo pecorino e rucola", Panino, false},
+					{"Diametro 8 bresaola rucola e brie", Panino, false},
+					{"Diametro 8 vegetariano", Panino, false},
+					{"Tubo 15 tonno maionese e pomodoro", Panino, false},
+					{"Tubo 15 praga radicchi e grana", Panino, false},
+				},
+				time.Date(2019, 9, 20, 0, 0, 0, 0, loc),
+			},
+			false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -266,62 +332,6 @@ func TestParseMenu(t *testing.T) {
 						t.Errorf("ParseMenuFile() %d has wrong IsDailyProposal: got %v, want %v", i, item.IsDailyProposal, wanted.IsDailyProposal)
 					}
 				}
-			}
-		})
-	}
-}
-
-func Test_parseTitle(t *testing.T) {
-	type args struct {
-		content string
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  bool
-		want1 MenuRowType
-	}{
-		{"Primo", args{"Primi piatti"}, true, Primo},
-		{"Primo Double Space", args{"Primi  piatti"}, true, Primo},
-		{"Primo Wrong Capitalization", args{"primi Piatti"}, true, Primo},
-		{"Primo NoSpace", args{"Primipiatti"}, true, Primo},
-		{"Primo_Puntuaction 01", args{"primi Piatti."}, true, Primo},
-		{"Primo_Puntuaction 02", args{"primi Piatti,"}, true, Primo},
-		{"Primo_Puntuaction 03", args{"primi Piatti;"}, true, Primo},
-		{"Primo Puntuaction 04", args{"primi Piatti…"}, true, Primo},
-		{"Primo Puntuaction 05", args{"primi;, Piatti.."}, true, Primo},
-
-		{"Secondo", args{"Secondi piatti"}, true, Secondo},
-		{"Secondo Double Space", args{"Secondi  piatti"}, true, Secondo},
-		{"Secondo Wrong Capitalization", args{"secondi Piatti"}, true, Secondo},
-		{"Secondo NoSpace", args{"Secondipiatti"}, true, Secondo},
-
-		{"Contorno", args{"Contorni"}, true, Contorno},
-		{"Contorno Wrong Capitalization", args{"Contorni"}, true, Contorno},
-		{"Contorno_Puntuaction 01", args{"contorni…."}, true, Contorno},
-
-		{"Vegetariano", args{"Piatti vegetariani"}, true, Vegetariano},
-		{"Vegetariano Double Space", args{"Piatti  vegetariani"}, true, Vegetariano},
-		{"Vegetariano Wrong Capitalization", args{"piatti Vegetariani"}, true, Vegetariano},
-		{"Vegetariano NoSpace", args{"Piattivegetariani"}, true, Vegetariano},
-
-		{"Frutta", args{"Frutta"}, true, Frutta},
-		{"Frutta Double Space", args{"Frutta  "}, true, Frutta},
-		{"Frutta Wrong Capitalization", args{"frutta"}, true, Frutta},
-
-		{"Panino", args{"i nostri panini espressi"}, true, Panino},
-		{"Panino Double Space", args{"i nostri panini  espressi"}, true, Panino},
-		{"Panino Original Dirt", args{"I NOSTRI  PANINI  ESPRESSI…"}, true, Panino},
-		{"Panino Wrong Capitalization", args{"I NOSTRI  panini  ESPRESSI…"}, true, Panino},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := parseTitle(tt.args.content)
-			if got != tt.want {
-				t.Errorf("parseTitle() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("parseTitle() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

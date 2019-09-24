@@ -36,6 +36,7 @@ func (u *UserChoice) Add(dish tuttobene.MenuRow) error {
 		tuttobene.Vegetariano: 1<<uint(tuttobene.Secondo) | 1<<uint(tuttobene.Contorno) | 1<<uint(tuttobene.Vegetariano),
 		tuttobene.Frutta:      0,
 		tuttobene.Panino:      0,
+		tuttobene.Dolce: 		0,
 	}
 
 	if u.DishMask&^allowedMask[dish.Type] != 0 {
@@ -61,7 +62,7 @@ func (u *UserChoice) mark() string {
 		return secondDish
 	} else if u.DishMask&(1<<uint(tuttobene.Contorno)) != 0 {
 		return firstDish
-	} else if u.DishMask&(1<<uint(tuttobene.Frutta)) != 0 {
+	} else if u.DishMask&(1<<uint(tuttobene.Frutta)|1<<uint(tuttobene.Dolce)) != 0 {
 		return dessertDish
 	} else if u.DishMask != 0 {
 		return secondDish //In case of custom choice, assume it's an S

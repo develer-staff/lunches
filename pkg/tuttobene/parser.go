@@ -2,14 +2,12 @@ package tuttobene
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/juju/errors"
+	"github.com/sahilm/fuzzy"
 	"github.com/tealeg/xlsx"
 )
 
@@ -19,23 +17,8 @@ var Titles = map[MenuRowType]string{
 	Contorno:    "contorni",
 	Vegetariano: "piatti vegetariani",
 	Frutta:      "frutta",
+	Dolce:       "dolci",
 	Panino:      "i nostri panini espressi",
-}
-
-// ParseMenuReaderAt takes io.ReaderAt of an XLSX file and returns a populated
-// menu struct.
-func ParseMenuReaderAt(r io.ReaderAt, size int64) (*Menu, error) {
-	f, err := xlsx.OpenReaderAt(r, size)
-	if err != nil {
-		return nil, errors.Annotate(err, "while opening readerAt")
-	}
-
-	if len(f.Sheet) == 0 {
-		return nil, errors.New("no sheets in file")
-	}
-
-	// Menu is expected to be on the first sheet
-	return ParseSheet(f.Sheets[0])
 }
 
 // ParseMenuBytes takes io.ReaderAt of an XLSX file and returns a populated
@@ -134,8 +117,13 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 		menuRows    Menu
 	)
 
-	for _, r := range rows {
-		content, rowType, isTitle, isDailyProposal := parseRow(standardizeSpaces(r))
+	menuTitles, err := getMenuTitles(rows)
+	if err != nil {
+		return nil, fmt.Errorf("while getting menu titles: %v", err)
+	}
+
+	for idx, r := range rows {
+		content, rowType, isTitle, isDailyProposal := parseRow(idx, standardizeSpaces(r), menuTitles)
 
 		if isTitle {
 			currentType = rowType
@@ -202,146 +190,77 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 	return &menuRows, nil
 }
 
-var testYear = -1
-
-func setTestYear(year int) {
-	testYear = year
+var dailyProposalPrefixes = []string{
+	"Proposta del giorno: ",
+	"Prop. del giorno: ",
 }
 
-func parseDate(content string) (bool, time.Time) {
-
-	content = strings.ToLower(content)
-
-	months := []string{
-		"gennaio",
-		"febbraio",
-		"marzo",
-		"aprile",
-		"maggio",
-		"giugno",
-		"luglio",
-		"agosto",
-		"settembre",
-		"ottobre",
-		"novembre",
-		"dicembre",
-	}
-
-	weekDays := []string{
-		"dom",
-		"lun",
-		"mar",
-		"mer",
-		"gio",
-		"ven",
-		"sab",
-	}
-
-	args := strings.Split(content, " ")
-	if len(args) != 3 {
-		return false, time.Time{}
-	}
-
-	weekDay := -1
-	for i, d := range weekDays {
-		if strings.HasPrefix(args[0], d) {
-			weekDay = i
-			break
-		}
-	}
-	if weekDay == -1 {
-		return false, time.Time{}
-	}
-
-	cutset := ""
-	for _, c := range args[1] {
-		if !unicode.IsDigit(c) {
-			cutset = cutset + string(c)
-		}
-	}
-	dayString := strings.Trim(args[1], cutset)
-	day, err := strconv.Atoi(dayString)
-	if err != nil {
-		return false, time.Time{}
-	}
-
-	month := -1
-	for i, m := range months {
-		if strings.HasPrefix(args[2], m) {
-			month = i + 1
-			break
-		}
-	}
-	if month == -1 {
-		return false, time.Time{}
-	}
-
-	loc, err := time.LoadLocation("Europe/Rome")
-	if err != nil {
-		log.Println("LoadLocation error: ", err)
-		return false, time.Time{}
-	}
-
-	var year int
-	if testYear == -1 {
-		year = time.Now().In(loc).Year()
-	} else {
-		year = testYear
-	}
-	date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, loc)
-	if date.Weekday() != time.Weekday(weekDay) {
-		log.Println("Weekday mismatch!")
-		return false, time.Time{}
-	}
-	return true, date
-}
-
-func parseRow(content string) (string, MenuRowType, bool, bool) {
+func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, MenuRowType, bool, bool) {
 	var isDailyProposal bool
 
 	if content == "" {
 		return content, Empty, false, false
 	}
 
-	isTitle, titleType := parseTitle(content)
+	titleType, isTitle := menuTitles[idx]
 	if isTitle {
 		return content, titleType, isTitle, isDailyProposal
 	}
 
-	if strings.HasPrefix(content, "Proposta del giorno: ") {
-		content = strings.TrimPrefix(content, "Proposta del giorno: ")
-		isDailyProposal = true
-	}
+	content, isDailyProposal = trimPrefixAny(content, dailyProposalPrefixes)
 
 	return content, Unknonwn, isTitle, isDailyProposal
 }
 
-func parseTitle(content string) (bool, MenuRowType) {
-	content = cleanTitleString(standardizeSpaces(content))
-	for k, title := range Titles {
-		if strings.EqualFold(title, content) || strings.EqualFold(strings.Replace(title, " ", "", -1), content) {
-			return true, k
+// trimPrefixAny tries to trim each prefix string in the order they are defined and returns
+// the resulting strings and a bool value which is true if any of the prefixes was trimmed.
+func trimPrefixAny(s string, prefixes []string) (string, bool) {
+	var trimmed bool
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			s = strings.TrimPrefix(s, prefix)
+			trimmed = true
 		}
 	}
 
-	return false, Unknonwn
-}
-
-var titleDirt = []string{
-	"…",
-	".",
-	",",
-	";",
-}
-
-func cleanTitleString(s string) string {
-	for _, p := range titleDirt {
-		s = strings.Replace(s, p, "", -1)
-	}
-
-	return strings.ToLower(s)
+	return s, trimmed
 }
 
 func standardizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
+}
+
+// getMenuTitles returns a map of the row index for each of the sections found in the menu.
+// Fuzzy matching is used to find the titles and some basic validation is done:
+// - order: the titles are expected to be in the order in which the relative const enumeration is declared (see menu.go)
+// - duplicates: if a duplicate title is found, an error is returned
+//
+// Note: it is not expected for all secitons to always be present i.e. if a section is missing, no error is thrown.
+func getMenuTitles(rows []string) (map[int]MenuRowType, error) {
+	var (
+		menuTitlesRowIndexes = make(map[int]MenuRowType)
+		lastTitleType        = Unknonwn
+		currentIndex         int
+	)
+
+	for t, title := range Titles {
+		results := fuzzy.Find(title, rows)
+		if len(results) == 0 || results[0].Score < 0 {
+			continue
+		}
+
+		if t < lastTitleType {
+			return nil, errors.New(fmt.Sprintf("Unexpected title order (Found: %v after last: %v)", t, lastTitleType))
+		}
+
+		currentIndex = results[0].Index
+		if _, found := menuTitlesRowIndexes[currentIndex]; found {
+			return nil, errors.New(fmt.Sprintf("Unexptected title duplicate: %s", title))
+		}
+
+		// First match is always the title of a section (menu items may contain the same text)
+		menuTitlesRowIndexes[results[0].Index] = t
+	}
+
+	return menuTitlesRowIndexes, nil
 }
