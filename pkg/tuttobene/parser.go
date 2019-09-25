@@ -83,7 +83,7 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 		}
 	}
 
-	return ParseMenuRows(nameCol, priceCol)
+	return ParseMenuCells(nameCol, priceCol)
 }
 
 func normalizeDish(r *MenuRow) *MenuRow {
@@ -114,8 +114,8 @@ func normalizeDish(r *MenuRow) *MenuRow {
 	return r
 }
 
-// ParseMenuRows takes a slice of strings and returns a populated menu struct.
-func ParseMenuRows(nameCol []string, priceCol []string) (*Menu, error) {
+// ParseMenuCells takes a slice of strings and returns a populated menu struct.
+func ParseMenuCells(nameCol []string, priceCol []string) (*Menu, error) {
 	var (
 		currentType MenuRowType
 		menuRows    Menu
