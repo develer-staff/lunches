@@ -208,7 +208,7 @@ func parsePrice(priceCol []string, idx int) decimal.Decimal {
 	if idx >= len(priceCol) {
 		return decimal.Zero
 	}
-	price, err := decimal.NewFromString(strings.Replace(priceCol[idx], "€ ", "", -1))
+	price, err := decimal.NewFromString(strings.TrimSpace(strings.Replace(priceCol[idx], "€", "", -1)))
 	if err != nil {
 		return decimal.Zero
 	}
