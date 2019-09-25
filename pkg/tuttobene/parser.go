@@ -8,6 +8,7 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/sahilm/fuzzy"
+	"github.com/shopspring/decimal"
 	"github.com/tealeg/xlsx"
 )
 
@@ -60,7 +61,6 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 		return nil, errors.New(fmt.Sprintf("not enough rows: %d", len(s.Rows)))
 	}
 
-	var rows = make([]string, 0)
 
 	// Check tuttobene menu format (dishes in column 0 or 1)
 	col := 0
@@ -73,13 +73,17 @@ func ParseSheet(s *xlsx.Sheet) (*Menu, error) {
 		}
 	}
 
+	var nameCol, priceCol []string
 	for _, r := range s.Rows {
 		if len(r.Cells) >= col+1 {
-			rows = append(rows, r.Cells[col].String())
+			nameCol = append(nameCol, r.Cells[col].String())
+		}
+		if len(r.Cells) >= col+2 {
+			priceCol = append(priceCol, r.Cells[col + 1].String())
 		}
 	}
 
-	return ParseMenuRows(rows)
+	return ParseMenuRows(nameCol, priceCol)
 }
 
 func normalizeDish(r *MenuRow) *MenuRow {
@@ -111,18 +115,18 @@ func normalizeDish(r *MenuRow) *MenuRow {
 }
 
 // ParseMenuRows takes a slice of strings and returns a populated menu struct.
-func ParseMenuRows(rows []string) (*Menu, error) {
+func ParseMenuRows(nameCol []string, priceCol []string) (*Menu, error) {
 	var (
 		currentType MenuRowType
 		menuRows    Menu
 	)
 
-	menuTitles, err := getMenuTitles(rows)
+	menuTitles, err := getMenuTitles(nameCol)
 	if err != nil {
 		return nil, fmt.Errorf("while getting menu titles: %v", err)
 	}
 
-	for idx, r := range rows {
+	for idx, r := range nameCol {
 		content, rowType, isTitle, isDailyProposal := parseRow(idx, standardizeSpaces(r), menuTitles)
 
 		if isTitle {
@@ -147,6 +151,7 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			continue
 		}
 
+		price := parsePrice(priceCol, idx)
 		// Handle "Pasta al ragù, pesto o pomodoro (sono sempre disponibili)"
 		if strings.HasSuffix(content, "(sono sempre disponibili)") {
 
@@ -154,18 +159,21 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 				Content:         "Pasta al ragù",
 				Type:            currentType,
 				IsDailyProposal: false,
+				Price: price,
 			})
 
 			menuRows.Add(&MenuRow{
 				Content:         "Pasta al pesto",
 				Type:            currentType,
 				IsDailyProposal: false,
+				Price: price,
 			})
 
 			menuRows.Add(&MenuRow{
 				Content:         "Pasta al pomodoro",
 				Type:            currentType,
 				IsDailyProposal: false,
+				Price: price,
 			})
 
 			continue
@@ -175,6 +183,7 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 			Content:         strings.TrimSpace(content),
 			Type:            currentType,
 			IsDailyProposal: isDailyProposal,
+			Price: price,
 		}))
 	}
 
@@ -193,6 +202,17 @@ func ParseMenuRows(rows []string) (*Menu, error) {
 var dailyProposalPrefixes = []string{
 	"Proposta del giorno: ",
 	"Prop. del giorno: ",
+}
+
+func parsePrice(priceCol []string, idx int) decimal.Decimal {
+	if idx >= len(priceCol) {
+		return decimal.Zero
+	}
+	price, err := decimal.NewFromString(strings.Replace(priceCol[idx], "€ ", "", -1))
+	if err != nil {
+		return decimal.Zero
+	}
+	return price
 }
 
 func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, MenuRowType, bool, bool) {
