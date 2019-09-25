@@ -1,11 +1,13 @@
 package tuttobene
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
 	_ "github.com/tealeg/xlsx"
 )
 
@@ -315,8 +317,14 @@ func TestParseMenu(t *testing.T) {
 				return
 			}
 
-			if tt.want != nil && tt.want.String() != got.String() {
-				t.Errorf("ParseMenuFile(): %v, want: %v", got.String(), tt.want.String())
+			if tt.want != nil{
+				wantBytes, err := json.Marshal(tt.want)
+				assert.NoError(t, err)
+
+				gotBytes, err := json.Marshal(got)
+				assert.NoError(t, err)
+
+				assert.Equal(t, wantBytes, gotBytes)
 			}
 		})
 	}

@@ -59,7 +59,7 @@ func (m *Menu) String() string {
 			out += "Proposta del giorno: "
 		}
 
-		out = fmt.Sprintf("%30s - %4v\n",  out + r.Content, r.Price)
+		out = fmt.Sprintf("%s\n",  out + r.Content)
 	}
 	return out
 }
