@@ -127,7 +127,7 @@ func ParseMenuRows(nameCol []string, priceCol []string) (*Menu, error) {
 	}
 
 	for idx, r := range nameCol {
-		content, rowType, isTitle, isDailyProposal := parseRow(idx, standardizeSpaces(r), menuTitles)
+		content, rowType, isTitle, isDailyProposal := parseRow(idx, normalizeSpaces(r), menuTitles)
 
 		if isTitle {
 			currentType = rowType
@@ -136,7 +136,7 @@ func ParseMenuRows(nameCol []string, priceCol []string) (*Menu, error) {
 
 		// Skip first empty rows/check menu date
 		if currentType == Unknonwn {
-			isDate, date := parseDate(standardizeSpaces(r))
+			isDate, date := parseDate(normalizeSpaces(r))
 			if isDate {
 				menuRows.Date = date
 			}
@@ -227,14 +227,14 @@ func parseRow(idx int, content string, menuTitles map[int]MenuRowType) (string, 
 		return content, titleType, isTitle, isDailyProposal
 	}
 
-	content, isDailyProposal = trimPrefixAny(content, dailyProposalPrefixes)
+	content, isDailyProposal = trimPrefixAll(content, dailyProposalPrefixes)
 
 	return content, Unknonwn, isTitle, isDailyProposal
 }
 
-// trimPrefixAny tries to trim each prefix string in the order they are defined and returns
+// trimPrefixAll tries to trim each prefix string in the order they are defined and returns
 // the resulting strings and a bool value which is true if any of the prefixes was trimmed.
-func trimPrefixAny(s string, prefixes []string) (string, bool) {
+func trimPrefixAll(s string, prefixes []string) (string, bool) {
 	var trimmed bool
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(s, prefix) {
@@ -246,7 +246,7 @@ func trimPrefixAny(s string, prefixes []string) (string, bool) {
 	return s, trimmed
 }
 
-func standardizeSpaces(s string) string {
+func normalizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
