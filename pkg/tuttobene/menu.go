@@ -1,6 +1,7 @@
 package tuttobene
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -58,7 +59,7 @@ func (m *Menu) String() string {
 			out += "Proposta del giorno: "
 		}
 
-		out = out + r.Content + "\n"
+		out = fmt.Sprintf("%30s - %4v\n",  out + r.Content, r.Price)
 	}
 	return out
 }

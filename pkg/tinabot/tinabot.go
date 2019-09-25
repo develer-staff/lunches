@@ -105,7 +105,7 @@ func (t *TinaBot) AddCommands() {
 	t.bot.RespondTo("^(?i)setmenu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		if args[1] != "" {
 			menu := strings.Split(strings.TrimSpace(sanitize(args[1])), "\n")
-			m, err := tuttobene.ParseMenuRows(menu)
+			m, err := tuttobene.ParseMenuCells(menu, []string{})
 			if err != nil {
 				t.bot.Message(msg.Channel, "Menu parse error: "+err.Error())
 				return
