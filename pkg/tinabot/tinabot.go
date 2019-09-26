@@ -90,7 +90,7 @@ func (t *TinaBot) AddCommands() {
 
 		showPrices := false
 
-		if args[1] == "price" {
+		if strings.TrimSpace(args[1]) == "price" {
 			showPrices = true
 		} else if args[1] != "" {
 			t.bot.Message(msg.Channel, "Se stai cercando di impostare il menù, usa il comando `setmenu`\nPer vedere il menù corrente, usa il comando `menu` senza argomenti.")
