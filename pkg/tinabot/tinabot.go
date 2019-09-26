@@ -88,7 +88,11 @@ func (t *TinaBot) AddCommands() {
 
 	t.bot.RespondTo("^(?i)menu([\\s\\S]*)?", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 
-		if args[1] != "" {
+		showPrices := false
+
+		if args[1] == "price" {
+			showPrices = true
+		} else if args[1] != "" {
 			t.bot.Message(msg.Channel, "Se stai cercando di impostare il menù, usa il comando `setmenu`\nPer vedere il menù corrente, usa il comando `menu` senza argomenti.")
 			return
 		}
@@ -98,7 +102,7 @@ func (t *TinaBot) AddCommands() {
 		if err == redis.Nil {
 			t.bot.Message(msg.Channel, "Non c'è nessun menù impostato!")
 		} else {
-			t.bot.Message(msg.Channel, "Ecco il menù:\n"+m.String())
+			t.bot.Message(msg.Channel, "Ecco il menù:\n"+m.Format(showPrices))
 		}
 	})
 

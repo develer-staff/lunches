@@ -47,6 +47,10 @@ func (m *Menu) IsUpdated() bool {
 }
 
 func (m *Menu) String() string {
+	return m.Format(false)
+}
+
+func (m *Menu) Format(withPrices bool) string {
 	menutype := Unknonwn
 
 	out := "Data: *" + m.Date.Format("02/01/2006") + "*\n"
@@ -59,7 +63,12 @@ func (m *Menu) String() string {
 			out += "Proposta del giorno: "
 		}
 
-		out = fmt.Sprintf("%s\n",  out + r.Content)
+		price := ""
+		if withPrices && !r.Price.IsZero() {
+			price = fmt.Sprintf(" -- €%s", r.Price.String())
+		}
+
+		out = fmt.Sprintf("%s%s\n", out+r.Content, price)
 	}
 	return out
 }

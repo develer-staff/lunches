@@ -23,6 +23,7 @@ require (
 	github.com/mailgun/mailgun-go/v3 v3.3.0
 	github.com/mailru/easyjson v0.0.0-20190221075403-6243d8e04c3f // indirect
 	github.com/markbates/grift v1.0.5
+	github.com/markbates/inflect v1.0.4
 	github.com/nlopes/slack v0.5.0
 	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/sahilm/fuzzy v0.1.0
