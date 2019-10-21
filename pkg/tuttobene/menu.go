@@ -1,9 +1,12 @@
 package tuttobene
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -24,6 +27,7 @@ type MenuRow struct {
 	Content         string
 	Type            MenuRowType
 	IsDailyProposal bool
+	Price           decimal.Decimal
 }
 
 type Menu struct {
@@ -43,6 +47,10 @@ func (m *Menu) IsUpdated() bool {
 }
 
 func (m *Menu) String() string {
+	return m.Format(false)
+}
+
+func (m *Menu) Format(withPrices bool) string {
 	menutype := Unknonwn
 
 	out := "Data: *" + m.Date.Format("02/01/2006") + "*\n"
@@ -55,7 +63,12 @@ func (m *Menu) String() string {
 			out += "Proposta del giorno: "
 		}
 
-		out = out + r.Content + "\n"
+		price := ""
+		if withPrices && !r.Price.IsZero() {
+			price = fmt.Sprintf(" -- €%s", r.Price.String())
+		}
+
+		out = fmt.Sprintf("%s%s\n", out+r.Content, price)
 	}
 	return out
 }
