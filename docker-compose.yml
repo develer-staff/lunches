@@ -1,0 +1,16 @@
+version: '3'
+services:
+    web:
+        build: .
+        ports:
+        - "3000:3000"
+        links:
+        - db
+    db:
+        container_name: pg_db
+        image: postgres:9.6
+        restart: always
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: lunches_development
