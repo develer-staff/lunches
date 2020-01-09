@@ -81,7 +81,7 @@ func EmailHandler(c buffalo.Context) error {
 			return nil
 		}
 		name := strings.ToLower(h.Filename)
-		if strings.Contains(name, "menu") && strings.Contains(name, ".xlsx") {
+		if strings.Contains(name, "men") && strings.Contains(name, ".xlsx") {
 			if h.Size > 500000 {
 				log.Println("Attachemnt too large!")
 				api.PostMessage(channel, slack.MsgOptionText("Menu ricevuto, file in attachment di dimensioni eccessive!", false))
