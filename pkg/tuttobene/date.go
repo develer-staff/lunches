@@ -14,10 +14,30 @@ func setTestYear(year int) {
 	testYear = year
 }
 
-func parseDate(content string) (bool, time.Time) {
+func findWeek(str string) int {
 
-	content = strings.ToLower(content)
+	weekDays := []string{
+		"domenica",
+		"luned",
+		"marted",
+		"mercoled",
+		"gioved",
+		"venerd",
+		"sabato",
+	}
 
+	weekDay := -1
+	for i, d := range weekDays {
+		if strings.Contains(str, d) {
+			weekDay = i
+			break
+		}
+	}
+
+	return weekDay
+}
+
+func findMonth(str string) int {
 	months := []string{
 		"gennaio",
 		"febbraio",
@@ -33,52 +53,56 @@ func parseDate(content string) (bool, time.Time) {
 		"dicembre",
 	}
 
-	weekDays := []string{
-		"dom",
-		"lun",
-		"mar",
-		"mer",
-		"gio",
-		"ven",
-		"sab",
-	}
-
-	args := strings.Split(content, " ")
-	if len(args) != 3 {
-		return false, time.Time{}
-	}
-
-	weekDay := -1
-	for i, d := range weekDays {
-		if strings.HasPrefix(args[0], d) {
-			weekDay = i
-			break
-		}
-	}
-	if weekDay == -1 {
-		return false, time.Time{}
-	}
-
-	cutset := ""
-	for _, c := range args[1] {
-		if !unicode.IsDigit(c) {
-			cutset = cutset + string(c)
-		}
-	}
-	dayString := strings.Trim(args[1], cutset)
-	day, err := strconv.Atoi(dayString)
-	if err != nil {
-		return false, time.Time{}
-	}
-
 	month := -1
 	for i, m := range months {
-		if strings.HasPrefix(args[2], m) {
+		if strings.Contains(str, m) {
 			month = i + 1
 			break
 		}
 	}
-	if month == -1 {
+
+	return month
+}
+
+func findDay(str string) int {
+	day := -1
+
+	start := -1
+	stop := -1
+
+	for i, c := range str {
+		if unicode.IsDigit(c) {
+			if start == -1 {
+				start = i
+			}
+		} else {
+			if stop == -1 && start != -1 {
+				stop = i
+				break
+			}
+		}
+	}
+
+	if start != -1 && stop != -1 {
+		conv, err := strconv.Atoi(str[start:stop])
+		if err == nil && conv >= 1 && conv <= 31 {
+			day = conv
+		}
+	}
+
+	return day
+}
+
+func parseDate(content string) (bool, time.Time) {
+
+	content = strings.ToLower(content)
+
+	weekDay := findWeek(content)
+	month := findMonth(content)
+	day := findDay(content)
+
+	log.Println("DATA: ", weekDay, month, day)
+	if weekDay == -1 || month == -1 || day == -1 {
 		return false, time.Time{}
 	}
 

@@ -68,7 +68,7 @@ func TestParseMenu(t *testing.T) {
 		{
 			"testmenu2",
 			args{filepath.Join("test-fixtures", "testmenu2.xlsx")},
-			2019,
+			2020,
 			&Menu{
 				[]MenuRow{
 					{"Sedani alla Carloforte", Primo, false, decimal.NewFromFloat32(7.5)},
@@ -98,7 +98,7 @@ func TestParseMenu(t *testing.T) {
 					{"Tubo 15 tonno maionese e pomodoro", Panino, false, decimal.NewFromFloat32(3.8)},
 					{"Tubo 15 praga radicchi e grana", Panino, false, decimal.NewFromFloat32(3.8)},
 				},
-				time.Date(2019, 2, 12, 0, 0, 0, 0, loc),
+				time.Date(2020, 1, 16, 0, 0, 0, 0, loc),
 			},
 			false,
 		},
@@ -317,7 +317,7 @@ func TestParseMenu(t *testing.T) {
 				return
 			}
 
-			if tt.want != nil{
+			if tt.want != nil {
 				wantBytes, err := json.Marshal(tt.want)
 				assert.NoError(t, err)
 
