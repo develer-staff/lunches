@@ -1,0 +1,31 @@
+version: '3'
+services:
+    web:
+        build: .
+        ports:
+        - "3000:3000"
+        links:
+        - db
+        - redis
+        environment:
+            REDIS_URL: redis
+            # MAILGUN_DOMAIN
+            # MAILGUN_API_KEY
+            # SLACK_BOT_TOKEN
+            # SLACK_VERIFICATION_TOKEN
+            # FOOD_CHANNEL
+            # BOT_ID
+            # MARK_URL
+            # INTERVAL_MINUTES
+    redis:
+        container_name: redis_db
+        image: redis:latest
+        restart: always
+    db:
+        container_name: pg_db
+        image: postgres:9.6
+        restart: always
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: lunches_development
