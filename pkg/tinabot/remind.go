@@ -39,7 +39,7 @@ func formatReminder(mask int) string {
 	return reply
 }
 
-func (t *TinaBot) Remind(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+func (t *TinaBot) Remind(bot slackbot.BotInterface, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 	weekMask := map[string]int{
 		"off": 0,
 		"dis": 0,

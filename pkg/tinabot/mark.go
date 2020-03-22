@@ -48,7 +48,7 @@ func MarkUser(user *slack.User, food string) error {
 	return errors.New("user does not have a Develer mail")
 }
 
-func (t *TinaBot) Mark(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+func (t *TinaBot) Mark(b slackbot.BotInterface, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 	food := strings.TrimSpace(args[1])
 
 	validFood := []string{

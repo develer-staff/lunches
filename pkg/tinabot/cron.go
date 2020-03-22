@@ -13,7 +13,7 @@ import (
 	"github.com/go-redis/redis"
 )
 
-func (t *TinaBot) Cron(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+func (t *TinaBot) Cron(bot slackbot.BotInterface, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 
 	var crontab []string
 	if args[1] != "" {

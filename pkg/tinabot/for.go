@@ -70,7 +70,7 @@ func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 	return matches
 }
 
-func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+func (t *TinaBot) For(bot slackbot.BotInterface, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 	dest := args[1]
 	dish := sanitize(args[2])
 
