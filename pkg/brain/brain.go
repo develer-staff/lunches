@@ -9,6 +9,13 @@ import (
 	"github.com/go-redis/redis"
 )
 
+type BrainInterface interface {
+	Set(key string, val interface{}) error
+	Read(key string) (string, error)
+	Get(key string, q interface{}) error
+	Close() error
+}
+
 type Brain struct {
 	client *redis.Client
 }

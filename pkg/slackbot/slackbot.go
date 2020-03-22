@@ -14,8 +14,17 @@ type BotMsg struct {
 	Text    string
 }
 
-type SimpleAction func(*Bot, *BotMsg, *slack.User)
-type Action func(*Bot, *BotMsg, *slack.User, ...string)
+type SimpleAction func(BotInterface, *BotMsg, *slack.User)
+type Action func(BotInterface, *BotMsg, *slack.User, ...string)
+
+type BotInterface interface {
+	RespondTo(match string, action Action)
+	DefaultResponse(action SimpleAction)
+	Message(channel string, msg string)
+	HandleMsg(channel, username, text string)
+	FindUser(user string) *slack.User
+	OpenDirectChannel(user string) (string, error)
+}
 
 type Bot struct {
 	UserID string
@@ -82,4 +91,37 @@ func (bot *Bot) HandleMsg(channel, username, text string) {
 	if bot.defact != nil {
 		bot.defact(bot, msg, user)
 	}
+}
+
+func (bot *Bot) FindUser(user string) *slack.User {
+	if strings.HasPrefix(user, "<@") {
+		user = strings.Trim(user, "<@>")
+		u, err := bot.Client.GetUserInfo(user)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		return u
+	}
+
+	users, err := bot.Client.GetUsers()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	for _, u := range users {
+		if strings.ToLower(u.Name) == strings.ToLower(user) {
+			return &u
+		}
+	}
+	return nil
+}
+
+func (bot *Bot) OpenDirectChannel(user string) (string, error) {
+	_, _, ch, err := bot.Client.OpenIMChannel(user)
+	if err != nil {
+		return "", err
+	}
+	return ch, nil
 }

@@ -70,32 +70,7 @@ func findDishes(menu tuttobene.Menu, dish string) []tuttobene.MenuRow {
 	return matches
 }
 
-func getUserInfo(api *slack.Client, user string) *slack.User {
-	if strings.HasPrefix(user, "<@") {
-		user = strings.Trim(user, "<@>")
-		u, err := api.GetUserInfo(user)
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-		return u
-	}
-
-	users, err := api.GetUsers()
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-
-	for _, u := range users {
-		if strings.ToLower(u.Name) == strings.ToLower(user) {
-			return &u
-		}
-	}
-	return nil
-}
-
-func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
+func (t *TinaBot) For(bot slackbot.BotInterface, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 	dest := args[1]
 	dish := sanitize(args[2])
 
@@ -103,10 +78,10 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 	destCh := ""
 
 	if strings.ToLower(dest) != "me" {
-		finduser := getUserInfo(t.bot.Client, dest)
+		finduser := bot.FindUser(dest)
 		if finduser != nil {
 			destUser = User{finduser.Name, finduser.ID}
-			_, _, ch, err := bot.Client.OpenIMChannel(destUser.ID)
+			ch, err := bot.OpenDirectChannel(destUser.ID)
 			if err != nil {
 				log.Println(err)
 			} else {
@@ -155,7 +130,7 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 			t.bot.Message(msg.Channel, fmt.Sprintf("E' necessario specificare da chi vuoi copiare l'ordine"))
 			return
 		}
-		finduser := getUserInfo(t.bot.Client, l[1])
+		finduser := bot.FindUser(l[1])
 		name := User{Name: l[1], ID: ""}
 		if finduser != nil {
 			name = User{finduser.Name, finduser.ID}
