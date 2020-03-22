@@ -33,7 +33,7 @@ func TestOrder(t *testing.T) {
 	uclist2 := []UserChoice{uc3}
 	order.Set(User{"test", "123"}, uclist)
 	assertEqual(t, order.String(), "1 primo [test]\n1 secondo [test]", "")
-	assertEqual(t, order.Format(false), "1 primo\n1 secondo", "")
+	assertEqual(t, order.Format(false, false), "1 primo\n1 secondo", "")
 	order.Set(User{"test2", "456"}, uclist)
 	assertEqual(t, order.String(), "2 primo [test, test2]\n2 secondo [test, test2]", "")
 	order.Set(User{"test3", "789"}, uclist2)
