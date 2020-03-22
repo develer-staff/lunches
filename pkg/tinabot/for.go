@@ -81,7 +81,7 @@ func (t *TinaBot) For(bot *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User,
 		finduser := bot.FindUser(dest)
 		if finduser != nil {
 			destUser = User{finduser.Name, finduser.ID}
-			_, _, ch, err := bot.Client.OpenIMChannel(destUser.ID)
+			ch, err := bot.OpenDirectChannel(destUser.ID)
 			if err != nil {
 				log.Println(err)
 			} else {

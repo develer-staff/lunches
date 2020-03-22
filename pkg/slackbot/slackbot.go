@@ -108,3 +108,11 @@ func (bot *Bot) FindUser(user string) *slack.User {
 	}
 	return nil
 }
+
+func (bot *Bot) OpenDirectChannel(user string) (string, error) {
+	_, _, ch, err := bot.Client.OpenIMChannel(user)
+	if err != nil {
+		return "", err
+	}
+	return ch, nil
+}
