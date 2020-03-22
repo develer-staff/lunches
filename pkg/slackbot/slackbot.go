@@ -83,3 +83,28 @@ func (bot *Bot) HandleMsg(channel, username, text string) {
 		bot.defact(bot, msg, user)
 	}
 }
+
+func (bot *Bot) FindUser(user string) *slack.User {
+	if strings.HasPrefix(user, "<@") {
+		user = strings.Trim(user, "<@>")
+		u, err := bot.Client.GetUserInfo(user)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		return u
+	}
+
+	users, err := bot.Client.GetUsers()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	for _, u := range users {
+		if strings.ToLower(u.Name) == strings.ToLower(user) {
+			return &u
+		}
+	}
+	return nil
+}

@@ -164,7 +164,7 @@ func (t *TinaBot) AddCommands() {
 	t.bot.RespondTo("^(?i)rmorder (.*)$", func(b *slackbot.Bot, msg *slackbot.BotMsg, user *slack.User, args ...string) {
 		u := args[1]
 		name := User{u, ""}
-		finduser := getUserInfo(b.Client, u)
+		finduser := t.bot.FindUser(u)
 		if finduser != nil {
 			name = User{finduser.Name, finduser.ID}
 		}
